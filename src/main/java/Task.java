@@ -3,6 +3,7 @@
  */
 public class Task {
     protected String description;
+    protected Boolean isDone;
 
     /**
      * Creates a task with the specified description.
@@ -11,6 +12,30 @@ public class Task {
      */
     public Task(String description) {
         this.description = description;
+        this.isDone = false;
+    }
+
+    /**
+     * Marks a task as completed
+     */
+    public void markAsDone() {
+        this.isDone = true;
+    }
+
+    /**
+     * Unmarks a completed task
+     */
+    public void unmarkAsDone() {
+        this.isDone = false;
+    }
+
+    /**
+     * Returns a marker for display depending on task completion
+     *
+     * @return "X" for completed task, " " for uncompleted task
+     */
+    public String getStatusIcon() {
+        return (isDone ? "X" : " "); // mark done task with X
     }
 
     /**
