@@ -56,22 +56,25 @@ public class HappyBot {
      * @param tasks all tasks
      * @param numberOfTasks the number of tasks stored in the array
      * @param userInput the command entered by the user
+     * @throws HappyBotException if the task number is invalid
      */
-    private static void markTask(Task[] tasks, int numberOfTasks, String userInput) {
+    private static void markTask(Task[] tasks, int numberOfTasks, String userInput)
+            throws HappyBotException {
+        if (numberOfTasks == 0) {
+            throw new HappyBotException("There are no tasks to mark.");
+        }
+
         String taskNumberText = userInput.substring("mark".length()).trim();
         int taskNumber;
 
         try {
             taskNumber = Integer.parseInt(taskNumberText);
         } catch (NumberFormatException e) {
-            System.out.println(" Oops! Please provide a valid task number.\n" + DIVIDER);
-            return;
+            throw new HappyBotException("Please provide a valid task number.");
         }
 
         if (taskNumber < 1 || taskNumber > numberOfTasks) {
-            System.out.println(" Oops! Please choose a task number between 1 and "
-                    + numberOfTasks + ".\n" + DIVIDER);
-            return;
+            throw new HappyBotException("Please choose a valid task number.");
         }
 
         Task taskToMark = tasks[taskNumber - 1];
@@ -87,22 +90,25 @@ public class HappyBot {
      * @param tasks all tasks
      * @param numberOfTasks the number of tasks stored in the array
      * @param userInput the command entered by the user
+     * @throws HappyBotException if the task number is invalid
      */
-    private static void unmarkTask(Task[] tasks, int numberOfTasks, String userInput) {
+    private static void unmarkTask(Task[] tasks, int numberOfTasks, String userInput)
+            throws HappyBotException {
+        if (numberOfTasks == 0) {
+            throw new HappyBotException("There are no tasks to unmark.");
+        }
+
         String taskNumberText = userInput.substring("unmark".length()).trim();
         int taskNumber;
 
         try {
             taskNumber = Integer.parseInt(taskNumberText);
         } catch (NumberFormatException e) {
-            System.out.println(" Oops! Please provide a valid task number.\n" + DIVIDER);
-            return;
+            throw new HappyBotException("Please provide a valid task number.");
         }
 
         if (taskNumber < 1 || taskNumber > numberOfTasks) {
-            System.out.println(" Oops! Please choose a task number between 1 and "
-                    + numberOfTasks + ".\n" + DIVIDER);
-            return;
+            throw new HappyBotException("Please choose a valid task number.");
         }
 
         Task taskToUnmark = tasks[taskNumber - 1];
@@ -131,76 +137,75 @@ public class HappyBot {
             } else {
                 body = "";
             }
-            switch (command) {
-            case "bye":
-                isRunning = false;
-                break;
-            case "list":
-                printTaskList(tasks, numberOfTasks);
-                break;
-            case "mark":
-                markTask(tasks, numberOfTasks, userInput);
-                break;
-            case "unmark":
-                unmarkTask(tasks, numberOfTasks, userInput);
-                break;
-            case "todo":
-                if (body.isBlank()) {
-                    System.out.println(" Oops! The description of a todo cannot be empty.\n" + DIVIDER);
+            try {
+                switch (command) {
+                case "bye":
+                    isRunning = false;
                     break;
-                }
-                tasks[numberOfTasks] = new ToDo(body);
-                numberOfTasks++;
-                System.out.println(" Got it. I've added this task:\n"
-                        + "   " + tasks[numberOfTasks - 1] + "\n"
-                        + " Now you have " + numberOfTasks + " tasks in the list.\n"
-                        + DIVIDER);
-                break;
-            case "deadline":
-                String deadlineMarker = " /by ";
-                int deadlineMarkerIndex = body.indexOf(deadlineMarker);
-                if (deadlineMarkerIndex < 0) {
-                    System.out.println(" Oops! Use: deadline <description> /by <due date>.\n" + DIVIDER);
+                case "list":
+                    printTaskList(tasks, numberOfTasks);
                     break;
-                }
-                String deadlineDescription = body.substring(0, deadlineMarkerIndex);
-                String dueDate = body.substring(deadlineMarkerIndex + deadlineMarker.length());
-                if (deadlineDescription.isBlank() || dueDate.isBlank()) {
-                    System.out.println(" Oops! A deadline needs both a description and due date.\n" + DIVIDER);
+                case "mark":
+                    markTask(tasks, numberOfTasks, userInput);
                     break;
-                }
-                tasks[numberOfTasks] = new Deadline(deadlineDescription, dueDate);
-                numberOfTasks++;
-                System.out.println(" Got it. I've added this task:\n"
-                        + "   " + tasks[numberOfTasks - 1] + "\n"
-                        + " Now you have " + numberOfTasks + " tasks in the list.\n"
-                        + DIVIDER);
-                break;
-            case "event":
-                String fromMarker = " /from ";
-                String toMarker = " /to ";
-                int fromMarkerIndex = body.indexOf(fromMarker);
-                int toMarkerIndex = body.indexOf(toMarker, fromMarkerIndex + fromMarker.length());
-                if (fromMarkerIndex < 0 || toMarkerIndex < 0) {
-                    System.out.println(" Oops! Use: event <description> /from <start> /to <end>.\n" + DIVIDER);
+                case "unmark":
+                    unmarkTask(tasks, numberOfTasks, userInput);
                     break;
-                }
-                String eventDescription = body.substring(0, fromMarkerIndex);
-                String startTime = body.substring(fromMarkerIndex + fromMarker.length(), toMarkerIndex);
-                String endTime = body.substring(toMarkerIndex + toMarker.length());
-                if (eventDescription.isBlank() || startTime.isBlank() || endTime.isBlank()) {
-                    System.out.println(" Oops! An event needs a description, start time, and end time.\n" + DIVIDER);
+                case "todo":
+                    if (body.isBlank()) {
+                        throw new HappyBotException("The description of a todo cannot be empty.");
+                    }
+                    tasks[numberOfTasks] = new ToDo(body);
+                    numberOfTasks++;
+                    System.out.println(" Got it. I've added this task:\n"
+                            + "   " + tasks[numberOfTasks - 1] + "\n"
+                            + " Now you have " + numberOfTasks + " tasks in the list.\n"
+                            + DIVIDER);
                     break;
+                case "deadline":
+                    String deadlineMarker = " /by ";
+                    int deadlineMarkerIndex = body.indexOf(deadlineMarker);
+                    if (deadlineMarkerIndex < 0) {
+                        throw new HappyBotException("Use: deadline <description> /by <due date>.");
+                    }
+                    String deadlineDescription = body.substring(0, deadlineMarkerIndex);
+                    String dueDate = body.substring(deadlineMarkerIndex + deadlineMarker.length());
+                    if (deadlineDescription.isBlank() || dueDate.isBlank()) {
+                        throw new HappyBotException("Use: deadline <description> /by <due date>");
+                    }
+                    tasks[numberOfTasks] = new Deadline(deadlineDescription, dueDate);
+                    numberOfTasks++;
+                    System.out.println(" Got it. I've added this task:\n"
+                            + "   " + tasks[numberOfTasks - 1] + "\n"
+                            + " Now you have " + numberOfTasks + " tasks in the list.\n"
+                            + DIVIDER);
+                    break;
+                case "event":
+                    String fromMarker = " /from ";
+                    String toMarker = " /to ";
+                    int fromMarkerIndex = body.indexOf(fromMarker);
+                    int toMarkerIndex = body.indexOf(toMarker, fromMarkerIndex + fromMarker.length());
+                    if (fromMarkerIndex < 0 || toMarkerIndex < 0) {
+                        throw new HappyBotException("Use: event <description> /from <startDate> /to <endDate>.");
+                    }
+                    String eventDescription = body.substring(0, fromMarkerIndex);
+                    String startTime = body.substring(fromMarkerIndex + fromMarker.length(), toMarkerIndex);
+                    String endTime = body.substring(toMarkerIndex + toMarker.length());
+                    if (eventDescription.isBlank() || startTime.isBlank() || endTime.isBlank()) {
+                        throw new HappyBotException("Use: event <description> /from <startDate> /to <endDate>.");
+                    }
+                    tasks[numberOfTasks] = new Event(startTime, endTime, eventDescription);
+                    numberOfTasks++;
+                    System.out.println(" Got it. I've added this task:\n"
+                            + "   " + tasks[numberOfTasks - 1] + "\n"
+                            + " Now you have " + numberOfTasks + " tasks in the list.\n"
+                            + DIVIDER);
+                    break;
+                default:
+                    throw new HappyBotException("I don't know what that means :-(");
                 }
-                tasks[numberOfTasks] = new Event(startTime, endTime, eventDescription);
-                numberOfTasks++;
-                System.out.println(" Got it. I've added this task:\n"
-                        + "   " + tasks[numberOfTasks - 1] + "\n"
-                        + " Now you have " + numberOfTasks + " tasks in the list.\n"
-                        + DIVIDER);
-                break;
-            default:
-                System.out.println("OOPS!!! I'm sorry, but I don't know what that means :-(\n" + DIVIDER);
+            } catch (HappyBotException e) {
+                System.out.println(" Oops! " + e.getMessage() + "\n" + DIVIDER);
             }
         }
 
