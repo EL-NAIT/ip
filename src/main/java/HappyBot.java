@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -33,16 +35,15 @@ public class HappyBot {
      * Prints every task together with its completion status.
      *
      * @param tasks the tasks to display
-     * @param numberOfTasks the number of tasks stored in the array
      */
-    private static void printTaskList(Task[] tasks, int numberOfTasks) {
+    private static void printTaskList(List<Task> tasks) {
         StringBuilder taskList = new StringBuilder(" Here are the tasks in your list:\n");
 
-        for (int i = 0; i < numberOfTasks; i++) {
+        for (int i = 0; i < tasks.size(); i++) {
             taskList.append(" ")
                     .append(i + 1)
                     .append(".")
-                    .append(tasks[i])
+                    .append(tasks.get(i))
                     .append("\n");
         }
 
@@ -54,13 +55,12 @@ public class HappyBot {
      * Marks a selected task as completed.
      *
      * @param tasks all tasks
-     * @param numberOfTasks the number of tasks stored in the array
      * @param userInput the command entered by the user
      * @throws HappyBotException if the task number is invalid
      */
-    private static void markTask(Task[] tasks, int numberOfTasks, String userInput)
+    private static void markTask(List<Task> tasks, String userInput)
             throws HappyBotException {
-        if (numberOfTasks == 0) {
+        if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to mark.");
         }
 
@@ -73,11 +73,11 @@ public class HappyBot {
             throw new HappyBotException("Please provide a valid task number.");
         }
 
-        if (taskNumber < 1 || taskNumber > numberOfTasks) {
+        if (taskNumber < 1 || taskNumber > tasks.size()) {
             throw new HappyBotException("Please choose a valid task number.");
         }
 
-        Task taskToMark = tasks[taskNumber - 1];
+        Task taskToMark = tasks.get(taskNumber - 1);
         taskToMark.markAsDone();
         System.out.println(" Nice! I've marked this task as done:\n"
                 + "   " + taskToMark + "\n"
@@ -88,13 +88,12 @@ public class HappyBot {
      * Marks a selected task as not completed.
      *
      * @param tasks all tasks
-     * @param numberOfTasks the number of tasks stored in the array
      * @param userInput the command entered by the user
      * @throws HappyBotException if the task number is invalid
      */
-    private static void unmarkTask(Task[] tasks, int numberOfTasks, String userInput)
+    private static void unmarkTask(List<Task> tasks, String userInput)
             throws HappyBotException {
-        if (numberOfTasks == 0) {
+        if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to unmark.");
         }
 
@@ -107,22 +106,54 @@ public class HappyBot {
             throw new HappyBotException("Please provide a valid task number.");
         }
 
-        if (taskNumber < 1 || taskNumber > numberOfTasks) {
+        if (taskNumber < 1 || taskNumber > tasks.size()) {
             throw new HappyBotException("Please choose a valid task number.");
         }
 
-        Task taskToUnmark = tasks[taskNumber - 1];
+        Task taskToUnmark = tasks.get(taskNumber - 1);
         taskToUnmark.unmarkAsDone();
         System.out.println(" OK, I've marked this task as not done yet:\n"
                 + "   " + taskToUnmark + "\n"
                 + DIVIDER);
     }
 
+    /**
+     * Deletes a selected task from the list.
+     *
+     * @param tasks all tasks
+     * @param userInput the command entered by the user
+     * @throws HappyBotException if there are no tasks or the task number is invalid
+     */
+    private static void deleteTask(List<Task> tasks, String userInput)
+            throws HappyBotException {
+        if (tasks.isEmpty()) {
+            throw new HappyBotException("There are no tasks to delete.");
+        }
+
+        String taskNumberText = userInput.substring("delete".length()).trim();
+        int taskNumber;
+
+        try {
+            taskNumber = Integer.parseInt(taskNumberText);
+        } catch (NumberFormatException e) {
+            throw new HappyBotException("Please provide a valid task number.");
+        }
+
+        if (taskNumber < 1 || taskNumber > tasks.size()) {
+            throw new HappyBotException("Please choose a valid task number.");
+        }
+
+        Task taskToDelete = tasks.get(taskNumber - 1);
+        tasks.remove(taskNumber - 1);
+        System.out.println(" Alrighties I've removed this task:\n"
+                + "   " + taskToDelete + "\n"
+                + " Now you have " + tasks.size() + " tasks in the list.\n"
+                + DIVIDER);
+    }
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        // Assumption here is that the number of tasks will not exceed 100
-        Task[] tasks = new Task[100];
-        int numberOfTasks = 0;
+        List<Task> tasks = new ArrayList<>();
         boolean isRunning = true;
         printWelcomeMessage();
 
@@ -143,23 +174,25 @@ public class HappyBot {
                     isRunning = false;
                     break;
                 case "list":
-                    printTaskList(tasks, numberOfTasks);
+                    printTaskList(tasks);
                     break;
                 case "mark":
-                    markTask(tasks, numberOfTasks, userInput);
+                    markTask(tasks, userInput);
                     break;
                 case "unmark":
-                    unmarkTask(tasks, numberOfTasks, userInput);
+                    unmarkTask(tasks, userInput);
+                    break;
+                case "delete":
+                    deleteTask(tasks, userInput);
                     break;
                 case "todo":
                     if (body.isBlank()) {
                         throw new HappyBotException("The description of a todo cannot be empty.");
                     }
-                    tasks[numberOfTasks] = new ToDo(body);
-                    numberOfTasks++;
+                    tasks.add(new ToDo(body));
                     System.out.println(" Got it. I've added this task:\n"
-                            + "   " + tasks[numberOfTasks - 1] + "\n"
-                            + " Now you have " + numberOfTasks + " tasks in the list.\n"
+                            + "   " + tasks.getLast() + "\n"
+                            + " Now you have " + tasks.size() + " tasks in the list.\n"
                             + DIVIDER);
                     break;
                 case "deadline":
@@ -173,11 +206,10 @@ public class HappyBot {
                     if (deadlineDescription.isBlank() || dueDate.isBlank()) {
                         throw new HappyBotException("Use: deadline <description> /by <due date>");
                     }
-                    tasks[numberOfTasks] = new Deadline(deadlineDescription, dueDate);
-                    numberOfTasks++;
+                    tasks.add(new Deadline(deadlineDescription, dueDate));
                     System.out.println(" Got it. I've added this task:\n"
-                            + "   " + tasks[numberOfTasks - 1] + "\n"
-                            + " Now you have " + numberOfTasks + " tasks in the list.\n"
+                            + "   " + tasks.getLast() + "\n"
+                            + " Now you have " + tasks.size() + " tasks in the list.\n"
                             + DIVIDER);
                     break;
                 case "event":
@@ -194,11 +226,10 @@ public class HappyBot {
                     if (eventDescription.isBlank() || startTime.isBlank() || endTime.isBlank()) {
                         throw new HappyBotException("Use: event <description> /from <startDate> /to <endDate>.");
                     }
-                    tasks[numberOfTasks] = new Event(startTime, endTime, eventDescription);
-                    numberOfTasks++;
+                    tasks.add(new Event(startTime, endTime, eventDescription));
                     System.out.println(" Got it. I've added this task:\n"
-                            + "   " + tasks[numberOfTasks - 1] + "\n"
-                            + " Now you have " + numberOfTasks + " tasks in the list.\n"
+                            + "   " + tasks.getLast() + "\n"
+                            + " Now you have " + tasks.size() + " tasks in the list.\n"
                             + DIVIDER);
                     break;
                 default:
