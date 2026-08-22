@@ -41,9 +41,7 @@ public class HappyBot {
         for (int i = 0; i < numberOfTasks; i++) {
             taskList.append(" ")
                     .append(i + 1)
-                    .append(".[")
-                    .append(tasks[i].getStatusIcon())
-                    .append("] ")
+                    .append(".")
                     .append(tasks[i])
                     .append("\n");
         }
@@ -79,7 +77,7 @@ public class HappyBot {
         Task taskToMark = tasks[taskNumber - 1];
         taskToMark.markAsDone();
         System.out.println(" Nice! I've marked this task as done:\n"
-                + "   [" + taskToMark.getStatusIcon() + "] " + taskToMark + "\n"
+                + "   " + taskToMark + "\n"
                 + DIVIDER);
     }
 
@@ -110,7 +108,7 @@ public class HappyBot {
         Task taskToUnmark = tasks[taskNumber - 1];
         taskToUnmark.unmarkAsDone();
         System.out.println(" OK, I've marked this task as not done yet:\n"
-                + "   [" + taskToUnmark.getStatusIcon() + "] " + taskToUnmark + "\n"
+                + "   " + taskToUnmark + "\n"
                 + DIVIDER);
     }
 
@@ -125,24 +123,84 @@ public class HappyBot {
         while (isRunning) {
             String userInput = scanner.nextLine();
             System.out.println(DIVIDER);
-            switch (userInput) {
+            String[] instructionArray = userInput.split(" ", 2);
+            String command = instructionArray[0];
+            String body;
+            if (instructionArray.length == 2) {
+                body = instructionArray[1];
+            } else {
+                body = "";
+            }
+            switch (command) {
             case "bye":
                 isRunning = false;
                 break;
             case "list":
                 printTaskList(tasks, numberOfTasks);
                 break;
-            case String markCommand when markCommand.equals("mark") || markCommand.startsWith("mark "):
+            case "mark":
                 markTask(tasks, numberOfTasks, userInput);
                 break;
-            case String unmarkCommand when unmarkCommand.equals("unmark")
-                    || unmarkCommand.startsWith("unmark "):
+            case "unmark":
                 unmarkTask(tasks, numberOfTasks, userInput);
                 break;
-            default:
-                tasks[numberOfTasks] = new Task(userInput);
+            case "todo":
+                if (body.isBlank()) {
+                    System.out.println(" Oops! The description of a todo cannot be empty.\n" + DIVIDER);
+                    break;
+                }
+                tasks[numberOfTasks] = new ToDo(body);
                 numberOfTasks++;
-                System.out.printf(" added: %s\n%s\n", userInput, DIVIDER);
+                System.out.println(" Got it. I've added this task:\n"
+                        + "   " + tasks[numberOfTasks - 1] + "\n"
+                        + " Now you have " + numberOfTasks + " tasks in the list.\n"
+                        + DIVIDER);
+                break;
+            case "deadline":
+                String deadlineMarker = " /by ";
+                int deadlineMarkerIndex = body.indexOf(deadlineMarker);
+                if (deadlineMarkerIndex < 0) {
+                    System.out.println(" Oops! Use: deadline <description> /by <due date>.\n" + DIVIDER);
+                    break;
+                }
+                String deadlineDescription = body.substring(0, deadlineMarkerIndex);
+                String dueDate = body.substring(deadlineMarkerIndex + deadlineMarker.length());
+                if (deadlineDescription.isBlank() || dueDate.isBlank()) {
+                    System.out.println(" Oops! A deadline needs both a description and due date.\n" + DIVIDER);
+                    break;
+                }
+                tasks[numberOfTasks] = new Deadline(deadlineDescription, dueDate);
+                numberOfTasks++;
+                System.out.println(" Got it. I've added this task:\n"
+                        + "   " + tasks[numberOfTasks - 1] + "\n"
+                        + " Now you have " + numberOfTasks + " tasks in the list.\n"
+                        + DIVIDER);
+                break;
+            case "event":
+                String fromMarker = " /from ";
+                String toMarker = " /to ";
+                int fromMarkerIndex = body.indexOf(fromMarker);
+                int toMarkerIndex = body.indexOf(toMarker, fromMarkerIndex + fromMarker.length());
+                if (fromMarkerIndex < 0 || toMarkerIndex < 0) {
+                    System.out.println(" Oops! Use: event <description> /from <start> /to <end>.\n" + DIVIDER);
+                    break;
+                }
+                String eventDescription = body.substring(0, fromMarkerIndex);
+                String startTime = body.substring(fromMarkerIndex + fromMarker.length(), toMarkerIndex);
+                String endTime = body.substring(toMarkerIndex + toMarker.length());
+                if (eventDescription.isBlank() || startTime.isBlank() || endTime.isBlank()) {
+                    System.out.println(" Oops! An event needs a description, start time, and end time.\n" + DIVIDER);
+                    break;
+                }
+                tasks[numberOfTasks] = new Event(startTime, endTime, eventDescription);
+                numberOfTasks++;
+                System.out.println(" Got it. I've added this task:\n"
+                        + "   " + tasks[numberOfTasks - 1] + "\n"
+                        + " Now you have " + numberOfTasks + " tasks in the list.\n"
+                        + DIVIDER);
+                break;
+            default:
+                System.out.println("OOPS!!! I'm sorry, but I don't know what that means :-(\n" + DIVIDER);
             }
         }
 

@@ -34,17 +34,17 @@ public class Task {
      *
      * @return "X" for completed task, " " for uncompleted task
      */
-    public String getStatusIcon() {
+    private String getStatusIcon() {
         return (isDone ? "X" : " "); // mark done task with X
     }
 
     /**
-     * Returns the task description for display.
+     * Returns the task description and completion status
      *
      * @return the task description
      */
     @Override
     public String toString() {
-        return description;
+        return "[" + getStatusIcon() + "] " + description;
     }
 }

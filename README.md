@@ -24,12 +24,20 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    Hello! I'm HappyBot.
    What can I do for you?
    ____________________________________________________________
-   Bye. Hope to see you again soon!
-   ____________________________________________________________
+   
    ```
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
 
 ## AI Use
 
-Codex was used to update this README.md, Level 0 increments and to help format console-output statements. Other uses of Codex are cited locally where applicable.
+Codex was used for the following:
+
+1. Updating this README.
+2. Assisting with Level 0 increments.
+3. Explaining Java and object-oriented design decisions, including where to validate command input.
+4. Implementing user input parsing with string functions.
+5. Helping format HappyBot’s console output.
+6. Creating, updating, and running console UI test cases in `test/ui-test-plan.md`.
+
+All AI-generated or AI-suggested code and test cases were personally reviewed before use.
