@@ -7,14 +7,20 @@
 ### Build command
 
 ```sh
-source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes src/main/java/HappyBot.java src/main/java/HappyBotException.java src/main/java/Task.java src/main/java/ToDo.java src/main/java/Deadline.java src/main/java/Event.java
+source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes src/main/java/HappyBot.java src/main/java/HappyBotException.java src/main/java/Storage.java src/main/java/Task.java src/main/java/ToDo.java src/main/java/Deadline.java src/main/java/Event.java
 ```
 
 ### Run command
 
 ```sh
-source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && java -cp /private/tmp/happybot-ui-test-classes HappyBot
+source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && rm -f data/HappyBot.txt && java -cp /private/tmp/happybot-ui-test-classes HappyBot
 ```
+
+### Test isolation
+
+HappyBot loads `data/HappyBot.txt` on startup, so tasks saved by one test case
+would otherwise be visible to the next one. The run command deletes that file
+before each case so that every case starts from an empty task list.
 
 ## Test cases
 
@@ -470,6 +476,87 @@ ____________________________________________________________
 ____________________________________________________________
  Oops! Please choose a valid task number.
 ____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-12: Reject task text containing the data-file separator
+
+**Aim:** Confirm that HappyBot rejects task text containing '|', which the data file uses to separate fields.
+
+#### Inputs
+
+```text
+todo read | book
+deadline return | book /by Sunday
+event project | meeting /from Mon /to Tue
+todo read book
+list
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Oops! A task cannot contain the '|' character.
+____________________________________________________________
+____________________________________________________________
+ Oops! A task cannot contain the '|' character.
+____________________________________________________________
+____________________________________________________________
+ Oops! A task cannot contain the '|' character.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [T][ ] read book
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Here are the tasks in your list:
+ 1.[T][ ] read book
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-13: End the session when the input ends
+
+**Aim:** Confirm that HappyBot exits with its farewell message when the input ends without a bye command.
+
+#### Inputs
+
+```text
+todo read book
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [T][ ] read book
+ Now you have 1 tasks in the list.
 ____________________________________________________________
 Bye. Hope to see you again soon!
 ____________________________________________________________

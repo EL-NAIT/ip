@@ -1,3 +1,5 @@
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -7,6 +9,7 @@ import java.util.Scanner;
  */
 public class HappyBot {
     private static final String DIVIDER = "____________________________________________________________";
+    private static final Path DATA_FILE_PATH = Path.of("data", "HappyBot.txt");
     private static final String BANNER = "H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT\n"
             + "H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T\n"
             + "HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T\n"
@@ -52,13 +55,72 @@ public class HappyBot {
     }
 
     /**
+     * Prints a standalone notice inside the usual divider lines.
+     *
+     * @param notice The message to display.
+     */
+    private static void printNotice(String notice) {
+        System.out.println(DIVIDER + "\n " + notice + "\n" + DIVIDER);
+    }
+
+    /**
+     * Saves the tasks and warns the user when the data file cannot be written.
+     *
+     * <p>A failed save must not end the session, so the problem is reported and the in-memory
+     * task list is kept for the rest of the run.
+     *
+     * @param storage The storage that writes the data file.
+     * @param tasks The tasks to save.
+     */
+    private static void saveTasks(Storage storage, List<Task> tasks) {
+        try {
+            storage.saveTasks(tasks);
+        } catch (IOException e) {
+            System.out.println(" Heads up! I could not save your tasks to "
+                    + storage.getFilePath() + ".\n" + DIVIDER);
+        }
+    }
+
+    /**
+     * Rejects task text that could not be stored and read back correctly.
+     *
+     * <p>The data file separates fields with a vertical bar, so a task containing one would be
+     * split into the wrong fields the next time HappyBot starts.
+     *
+     * @param taskText The command text describing the task.
+     * @throws HappyBotException If the text contains a vertical bar.
+     */
+    private static void checkTaskText(String taskText) throws HappyBotException {
+        if (taskText.contains("|")) {
+            throw new HappyBotException("A task cannot contain the '|' character.");
+        }
+    }
+
+    /**
+     * Adds a task, saves the updated list, and confirms the addition to the user.
+     *
+     * @param tasks All tasks.
+     * @param taskToAdd The task to add.
+     * @param storage The storage that saves the updated task list.
+     */
+    private static void addTask(List<Task> tasks, Task taskToAdd, Storage storage) {
+        tasks.add(taskToAdd);
+        saveTasks(storage, tasks);
+        System.out.println(" Got it. I've added this task:\n"
+                + "   " + taskToAdd + "\n"
+                + " Now you have " + tasks.size() + " tasks in the list.\n"
+                + DIVIDER);
+    }
+
+    /**
      * Marks a selected task as completed.
      *
      * @param tasks All tasks.
      * @param userInput The command entered by the user.
+     * @param storage The storage that saves the updated task list.
      * @throws HappyBotException If the task number is invalid.
      */
-    private static void markTask(List<Task> tasks, String userInput)
+    private static void markTask(List<Task> tasks, String userInput, Storage storage)
             throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to mark.");
@@ -79,6 +141,7 @@ public class HappyBot {
 
         Task taskToMark = tasks.get(taskNumber - 1);
         taskToMark.markAsDone();
+        saveTasks(storage, tasks);
         System.out.println(" Nice! I've marked this task as done:\n"
                 + "   " + taskToMark + "\n"
                 + DIVIDER);
@@ -89,9 +152,10 @@ public class HappyBot {
      *
      * @param tasks All tasks.
      * @param userInput The command entered by the user.
+     * @param storage The storage that saves the updated task list.
      * @throws HappyBotException If the task number is invalid.
      */
-    private static void unmarkTask(List<Task> tasks, String userInput)
+    private static void unmarkTask(List<Task> tasks, String userInput, Storage storage)
             throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to unmark.");
@@ -112,6 +176,7 @@ public class HappyBot {
 
         Task taskToUnmark = tasks.get(taskNumber - 1);
         taskToUnmark.unmarkAsDone();
+        saveTasks(storage, tasks);
         System.out.println(" OK, I've marked this task as not done yet:\n"
                 + "   " + taskToUnmark + "\n"
                 + DIVIDER);
@@ -122,9 +187,10 @@ public class HappyBot {
      *
      * @param tasks All tasks.
      * @param userInput The command entered by the user.
+     * @param storage The storage that saves the updated task list.
      * @throws HappyBotException If there are no tasks or the task number is invalid.
      */
-    private static void deleteTask(List<Task> tasks, String userInput)
+    private static void deleteTask(List<Task> tasks, String userInput, Storage storage)
             throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to delete.");
@@ -145,6 +211,7 @@ public class HappyBot {
 
         Task taskToDelete = tasks.get(taskNumber - 1);
         tasks.remove(taskNumber - 1);
+        saveTasks(storage, tasks);
         System.out.println(" Alrighties I've removed this task:\n"
                 + "   " + taskToDelete + "\n"
                 + " Now you have " + tasks.size() + " tasks in the list.\n"
@@ -158,11 +225,30 @@ public class HappyBot {
      */
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        Storage storage = new Storage(DATA_FILE_PATH);
         List<Task> tasks = new ArrayList<>();
+        String loadNotice = "";
+
+        try {
+            tasks = storage.loadTasks();
+            if (storage.getSkippedLineCount() > 0) {
+                loadNotice = "Heads up! I skipped " + storage.getSkippedLineCount()
+                        + " unreadable line(s) in your saved data.";
+            }
+        } catch (IOException e) {
+            loadNotice = "Heads up! I could not read " + storage.getFilePath()
+                    + ", so I am starting with an empty task list.";
+        }
+
         boolean isRunning = true;
         printWelcomeMessage();
 
-        while (isRunning) {
+        if (!loadNotice.isEmpty()) {
+            printNotice(loadNotice);
+        }
+
+        // Stopping at the end of the input also ends the session cleanly when no bye is typed.
+        while (isRunning && scanner.hasNextLine()) {
             String userInput = scanner.nextLine();
             System.out.println(DIVIDER);
             String[] instructionArray = userInput.split(" ", 2);
@@ -178,25 +264,23 @@ public class HappyBot {
                     printTaskList(tasks);
                     break;
                 case "mark":
-                    markTask(tasks, userInput);
+                    markTask(tasks, userInput, storage);
                     break;
                 case "unmark":
-                    unmarkTask(tasks, userInput);
+                    unmarkTask(tasks, userInput, storage);
                     break;
                 case "delete":
-                    deleteTask(tasks, userInput);
+                    deleteTask(tasks, userInput, storage);
                     break;
                 case "todo":
+                    checkTaskText(body);
                     if (body.isBlank()) {
                         throw new HappyBotException("The description of a todo cannot be empty.");
                     }
-                    tasks.add(new ToDo(body));
-                    System.out.println(" Got it. I've added this task:\n"
-                            + "   " + tasks.getLast() + "\n"
-                            + " Now you have " + tasks.size() + " tasks in the list.\n"
-                            + DIVIDER);
+                    addTask(tasks, new ToDo(body), storage);
                     break;
                 case "deadline":
+                    checkTaskText(body);
                     String deadlineMarker = " /by ";
                     int deadlineMarkerIndex = body.indexOf(deadlineMarker);
                     if (deadlineMarkerIndex < 0) {
@@ -207,13 +291,10 @@ public class HappyBot {
                     if (deadlineDescription.isBlank() || dueDate.isBlank()) {
                         throw new HappyBotException("Use: deadline <description> /by <due date>.");
                     }
-                    tasks.add(new Deadline(deadlineDescription, dueDate));
-                    System.out.println(" Got it. I've added this task:\n"
-                            + "   " + tasks.getLast() + "\n"
-                            + " Now you have " + tasks.size() + " tasks in the list.\n"
-                            + DIVIDER);
+                    addTask(tasks, new Deadline(deadlineDescription, dueDate), storage);
                     break;
                 case "event":
+                    checkTaskText(body);
                     String fromMarker = " /from ";
                     String toMarker = " /to ";
                     int fromMarkerIndex = body.indexOf(fromMarker);
@@ -229,11 +310,7 @@ public class HappyBot {
                         throw new HappyBotException(
                                 "Use: event <description> /from <startDate> /to <endDate>.");
                     }
-                    tasks.add(new Event(startTime, endTime, eventDescription));
-                    System.out.println(" Got it. I've added this task:\n"
-                            + "   " + tasks.getLast() + "\n"
-                            + " Now you have " + tasks.size() + " tasks in the list.\n"
-                            + DIVIDER);
+                    addTask(tasks, new Event(startTime, endTime, eventDescription), storage);
                     break;
                 default:
                     throw new HappyBotException("I don't know what that means :-(");

@@ -15,6 +15,15 @@ public class Deadline extends Task {
         this.endDate = endDate;
     }
 
+    /**
+     * Returns the deadline due date.
+     *
+     * @return The deadline due date.
+     */
+    public String getEndDate() {
+        return endDate;
+    }
+
     @Override
     public String toString() {
         return "[D]" + super.toString() + " (by: " + this.endDate + ")";

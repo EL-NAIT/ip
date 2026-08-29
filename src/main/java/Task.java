@@ -3,7 +3,7 @@
  */
 public class Task {
     protected String description;
-    protected Boolean isDone;
+    protected boolean isDone;
 
     /**
      * Creates a task with the specified description.
@@ -27,6 +27,24 @@ public class Task {
      */
     public void unmarkAsDone() {
         this.isDone = false;
+    }
+
+    /**
+     * Returns the task description.
+     *
+     * @return The task description.
+     */
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * Returns whether this task is completed.
+     *
+     * @return True if this task is completed.
+     */
+    public boolean isDone() {
+        return isDone;
     }
 
     /**
