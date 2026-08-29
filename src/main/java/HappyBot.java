@@ -1,10 +1,6 @@
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,31 +10,11 @@ import java.util.Map;
  * Runs the HappyBot chatbot application.
  *
  * <p>A HappyBot object owns the task list, the storage that saves it, and the user interface
- * that reads commands and prints replies. Console text is built by Ui alone, so this class is
- * left with the task list and the meaning of each command.
+ * that reads commands and prints replies. Ui builds the console text and Parser reads the
+ * typed command, which leaves this class with the task list and what each command does to it.
  */
 public class HappyBot {
     private static final Path DATA_FILE_PATH = Path.of("data", "HappyBot.txt");
-
-    /** Usage messages that show where a date belongs in each command. */
-    private static final String DEADLINE_USAGE = "Use: deadline <description> /by <yyyy-MM-dd>.";
-    private static final String EVENT_USAGE =
-            "Use: event <description> /from <yyyy-MM-dd> /to <yyyy-MM-dd>.";
-
-    /** Usage message for the command that lists the deadlines falling on one date. */
-    private static final String DUE_USAGE = "Use: due <date>, such as due 2019-12-02.";
-
-    /** Date patterns accepted from the user. The brackets mark each one as optional. */
-    private static final DateTimeFormatter DATE_FORMAT =
-            DateTimeFormatter.ofPattern("[yyyy-MM-dd][d/M/yyyy]");
-
-    /** Pattern accepted for the optional 24-hour time that may follow a date. */
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HHmm");
-
-    /** Message shown when a date and time cannot be read. */
-    private static final String DATE_FORMAT_HINT =
-            "Please write dates as yyyy-MM-dd or d/M/yyyy, with an optional 24-hour time that "
-                    + "defaults to 0000, such as 2019-12-02 1800.";
 
     /** User interface that reads the commands and prints every reply. */
     private final Ui ui;
@@ -95,18 +71,18 @@ public class HappyBot {
     }
 
     /**
-     * Rejects task text that could not be stored and read back correctly.
+     * Returns the task that a command's task number names.
      *
-     * <p>The data file separates fields with a vertical bar, so a task containing one would be
-     * split into the wrong fields the next time HappyBot starts.
-     *
-     * @param taskText The command text describing the task.
-     * @throws HappyBotException If the text contains a vertical bar.
+     * @param taskNumber The number typed by the user, counted from one.
+     * @return The task holding that number.
+     * @throws HappyBotException If no task holds that number.
      */
-    private static void checkTaskText(String taskText) throws HappyBotException {
-        if (taskText.contains("|")) {
-            throw new HappyBotException("A task cannot contain the '|' character.");
+    private Task getTask(int taskNumber) throws HappyBotException {
+        if (taskNumber < 1 || taskNumber > tasks.size()) {
+            throw new HappyBotException("Please choose a valid task number.");
         }
+
+        return tasks.get(taskNumber - 1);
     }
 
     /**
@@ -123,28 +99,15 @@ public class HappyBot {
     /**
      * Marks a selected task as completed.
      *
-     * @param userInput The command entered by the user.
-     * @throws HappyBotException If the task number is invalid.
+     * @param body The command text after the command word.
+     * @throws HappyBotException If there are no tasks or the task number is invalid.
      */
-    private void markTask(String userInput) throws HappyBotException {
+    private void markTask(String body) throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to mark.");
         }
 
-        String taskNumberText = userInput.substring("mark".length()).trim();
-        int taskNumber;
-
-        try {
-            taskNumber = Integer.parseInt(taskNumberText);
-        } catch (NumberFormatException e) {
-            throw new HappyBotException("Please provide a valid task number.");
-        }
-
-        if (taskNumber < 1 || taskNumber > tasks.size()) {
-            throw new HappyBotException("Please choose a valid task number.");
-        }
-
-        Task taskToMark = tasks.get(taskNumber - 1);
+        Task taskToMark = getTask(Parser.parseTaskNumber(body));
         taskToMark.markAsDone();
         saveTasks();
         ui.showMarkedTask(taskToMark);
@@ -153,28 +116,15 @@ public class HappyBot {
     /**
      * Marks a selected task as not completed.
      *
-     * @param userInput The command entered by the user.
-     * @throws HappyBotException If the task number is invalid.
+     * @param body The command text after the command word.
+     * @throws HappyBotException If there are no tasks or the task number is invalid.
      */
-    private void unmarkTask(String userInput) throws HappyBotException {
+    private void unmarkTask(String body) throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to unmark.");
         }
 
-        String taskNumberText = userInput.substring("unmark".length()).trim();
-        int taskNumber;
-
-        try {
-            taskNumber = Integer.parseInt(taskNumberText);
-        } catch (NumberFormatException e) {
-            throw new HappyBotException("Please provide a valid task number.");
-        }
-
-        if (taskNumber < 1 || taskNumber > tasks.size()) {
-            throw new HappyBotException("Please choose a valid task number.");
-        }
-
-        Task taskToUnmark = tasks.get(taskNumber - 1);
+        Task taskToUnmark = getTask(Parser.parseTaskNumber(body));
         taskToUnmark.unmarkAsDone();
         saveTasks();
         ui.showUnmarkedTask(taskToUnmark);
@@ -183,52 +133,20 @@ public class HappyBot {
     /**
      * Deletes a selected task from the list.
      *
-     * @param userInput The command entered by the user.
+     * @param body The command text after the command word.
      * @throws HappyBotException If there are no tasks or the task number is invalid.
      */
-    private void deleteTask(String userInput) throws HappyBotException {
+    private void deleteTask(String body) throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to delete.");
         }
 
-        String taskNumberText = userInput.substring("delete".length()).trim();
-        int taskNumber;
-
-        try {
-            taskNumber = Integer.parseInt(taskNumberText);
-        } catch (NumberFormatException e) {
-            throw new HappyBotException("Please provide a valid task number.");
-        }
-
-        if (taskNumber < 1 || taskNumber > tasks.size()) {
-            throw new HappyBotException("Please choose a valid task number.");
-        }
-
-        Task taskToDelete = tasks.get(taskNumber - 1);
+        int taskNumber = Parser.parseTaskNumber(body);
+        Task taskToDelete = getTask(taskNumber);
+        // Removing by position avoids List.remove(Object), which would search for an equal task.
         tasks.remove(taskNumber - 1);
         saveTasks();
         ui.showDeletedTask(taskToDelete, tasks.size());
-    }
-
-    /**
-     * Converts the date text of a command into a date and time.
-     *
-     * <p>The time is optional: text without a space holds a date alone and starts at midnight,
-     * while text with one must have a 24-hour time after the space.
-     *
-     * @param dateTimeText The date, and optional time, typed by the user.
-     * @return The date and time the text describes.
-     * @throws DateTimeParseException If the date, or the time given after it, cannot be read.
-     */
-    private static LocalDateTime parseDateTime(String dateTimeText) {
-        // Collapsing runs of spaces lets the date and any time split cleanly in two.
-        String[] dateTimeParts = dateTimeText.trim().replaceAll("\\s+", " ").split(" ", 2);
-        LocalDate date = LocalDate.parse(dateTimeParts[0], DATE_FORMAT);
-        LocalTime time = dateTimeParts.length == 2
-                ? LocalTime.parse(dateTimeParts[1], TIME_FORMAT)
-                : LocalTime.MIDNIGHT;
-
-        return LocalDateTime.of(date, time);
     }
 
     /**
@@ -237,15 +155,9 @@ public class HappyBot {
      * <p>Each deadline is collected under the number it has in the full list, so one shown here
      * can be marked or deleted with the number displayed beside it.
      *
-     * @param dateText The date typed by the user.
-     * @throws HappyBotException If no date was given or the date cannot be read.
+     * @param date The date the user asked about.
      */
-    private void showDeadlinesDueOn(String dateText) throws HappyBotException {
-        if (dateText.isBlank()) {
-            throw new HappyBotException(DUE_USAGE);
-        }
-
-        LocalDate date = parseDateTime(dateText).toLocalDate();
+    private void showDeadlinesDueOn(LocalDate date) {
         // Reusing the task display keeps one source of truth for how a date is written.
         String displayedDate = DatedTask.formatDate(date);
         // A LinkedHashMap keeps the deadlines in list order while remembering each task number.
@@ -275,9 +187,8 @@ public class HappyBot {
         while (isRunning && ui.hasNextCommand()) {
             String userInput = ui.readCommand();
             ui.showDivider();
-            String[] instructionArray = userInput.split(" ", 2);
-            String command = instructionArray[0];
-            String body = instructionArray.length == 2 ? instructionArray[1] : "";
+            String command = Parser.parseCommandWord(userInput);
+            String body = Parser.parseCommandBody(userInput);
 
             try {
                 switch (command) {
@@ -288,68 +199,31 @@ public class HappyBot {
                     ui.showTaskList(tasks);
                     break;
                 case "mark":
-                    markTask(userInput);
+                    markTask(body);
                     break;
                 case "unmark":
-                    unmarkTask(userInput);
+                    unmarkTask(body);
                     break;
                 case "delete":
-                    deleteTask(userInput);
+                    deleteTask(body);
                     break;
                 case "due":
-                    showDeadlinesDueOn(body);
+                    showDeadlinesDueOn(Parser.parseDueDate(body));
                     break;
                 case "todo":
-                    checkTaskText(body);
-                    if (body.isBlank()) {
-                        throw new HappyBotException("The description of a todo cannot be empty.");
-                    }
-                    addTask(new ToDo(body));
+                    addTask(Parser.parseToDo(body));
                     break;
                 case "deadline":
-                    checkTaskText(body);
-                    String deadlineMarker = " /by ";
-                    int deadlineMarkerIndex = body.indexOf(deadlineMarker);
-                    if (deadlineMarkerIndex < 0) {
-                        throw new HappyBotException(DEADLINE_USAGE);
-                    }
-                    String deadlineDescription = body.substring(0, deadlineMarkerIndex);
-                    String dueDateText = body.substring(deadlineMarkerIndex + deadlineMarker.length());
-                    if (deadlineDescription.isBlank() || dueDateText.isBlank()) {
-                        throw new HappyBotException(DEADLINE_USAGE);
-                    }
-                    LocalDateTime dueDate = parseDateTime(dueDateText);
-                    addTask(new Deadline(deadlineDescription, dueDate));
+                    addTask(Parser.parseDeadline(body));
                     break;
                 case "event":
-                    checkTaskText(body);
-                    String fromMarker = " /from ";
-                    String toMarker = " /to ";
-                    int fromMarkerIndex = body.indexOf(fromMarker);
-                    int toMarkerIndex = body.indexOf(toMarker, fromMarkerIndex + fromMarker.length());
-                    if (fromMarkerIndex < 0 || toMarkerIndex < 0) {
-                        throw new HappyBotException(EVENT_USAGE);
-                    }
-                    String eventDescription = body.substring(0, fromMarkerIndex);
-                    String startText = body.substring(fromMarkerIndex + fromMarker.length(), toMarkerIndex);
-                    String endText = body.substring(toMarkerIndex + toMarker.length());
-                    if (eventDescription.isBlank() || startText.isBlank() || endText.isBlank()) {
-                        throw new HappyBotException(EVENT_USAGE);
-                    }
-                    LocalDateTime startTime = parseDateTime(startText);
-                    LocalDateTime endTime = parseDateTime(endText);
-                    if (!startTime.isBefore(endTime)) {
-                        throw new HappyBotException("An event must start before it ends.");
-                    }
-                    addTask(new Event(startTime, endTime, eventDescription));
+                    addTask(Parser.parseEvent(body));
                     break;
                 default:
                     throw new HappyBotException("I don't know what that means :-(");
                 }
             } catch (HappyBotException e) {
                 ui.showError(e.getMessage());
-            } catch (DateTimeParseException e) {
-                ui.showError(DATE_FORMAT_HINT);
             }
         }
 
