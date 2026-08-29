@@ -10,7 +10,10 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Starts the HappyBot chatbot application.
+ * Runs the HappyBot chatbot application.
+ *
+ * <p>A HappyBot object owns the task list and the storage that saves it, so the methods that
+ * work on them read those from the object instead of receiving them as parameters.
  */
 public class HappyBot {
     private static final String DIVIDER = "____________________________________________________________";
@@ -40,6 +43,25 @@ public class HappyBot {
             + "HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T\n"
             + "H   H  A   A  P      P         Y    B   B  O   O    T\n"
             + "H   H  A   A  P      P         Y    BBBB    OOO     T\n";
+
+    /** Storage that loads the saved tasks at startup and saves them after every change. */
+    private final Storage storage;
+
+    /** Tasks held by this HappyBot for the length of the session. */
+    private List<Task> tasks;
+
+    /**
+     * Creates a HappyBot that keeps its tasks in the specified data file.
+     *
+     * <p>The saved tasks are read in run() rather than here, so that the welcome message is
+     * printed before any notice about unreadable saved data.
+     *
+     * @param filePath The location of the task data file.
+     */
+    public HappyBot(Path filePath) {
+        this.storage = new Storage(filePath);
+        this.tasks = new ArrayList<>();
+    }
 
     /**
      * Prints HappyBot's welcome message.
@@ -89,15 +111,31 @@ public class HappyBot {
     }
 
     /**
+     * Loads the saved tasks and reports saved data that could not be read.
+     *
+     * <p>A data file that cannot be read must not end the session, so the problem is reported
+     * and HappyBot starts with the empty task list made by the constructor.
+     */
+    private void loadSavedTasks() {
+        try {
+            tasks = storage.loadTasks();
+            if (storage.getSkippedLineCount() > 0) {
+                printNotice("Heads up! I skipped " + storage.getSkippedLineCount()
+                        + " unreadable line(s) in your saved data.");
+            }
+        } catch (IOException e) {
+            printNotice("Heads up! I could not read " + storage.getFilePath()
+                    + ", so I am starting with an empty task list.");
+        }
+    }
+
+    /**
      * Saves the tasks and warns the user when the data file cannot be written.
      *
      * <p>A failed save must not end the session, so the problem is reported and the in-memory
      * task list is kept for the rest of the run.
-     *
-     * @param storage The storage that writes the data file.
-     * @param tasks The tasks to save.
      */
-    private static void saveTasks(Storage storage, List<Task> tasks) {
+    private void saveTasks() {
         try {
             storage.saveTasks(tasks);
         } catch (IOException e) {
@@ -124,13 +162,11 @@ public class HappyBot {
     /**
      * Adds a task, saves the updated list, and confirms the addition to the user.
      *
-     * @param tasks All tasks.
      * @param taskToAdd The task to add.
-     * @param storage The storage that saves the updated task list.
      */
-    private static void addTask(List<Task> tasks, Task taskToAdd, Storage storage) {
+    private void addTask(Task taskToAdd) {
         tasks.add(taskToAdd);
-        saveTasks(storage, tasks);
+        saveTasks();
         System.out.println(" Got it. I've added this task:\n"
                 + "   " + taskToAdd + "\n"
                 + " Now you have " + tasks.size() + " tasks in the list.\n"
@@ -140,13 +176,10 @@ public class HappyBot {
     /**
      * Marks a selected task as completed.
      *
-     * @param tasks All tasks.
      * @param userInput The command entered by the user.
-     * @param storage The storage that saves the updated task list.
      * @throws HappyBotException If the task number is invalid.
      */
-    private static void markTask(List<Task> tasks, String userInput, Storage storage)
-            throws HappyBotException {
+    private void markTask(String userInput) throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to mark.");
         }
@@ -166,7 +199,7 @@ public class HappyBot {
 
         Task taskToMark = tasks.get(taskNumber - 1);
         taskToMark.markAsDone();
-        saveTasks(storage, tasks);
+        saveTasks();
         System.out.println(" Nice! I've marked this task as done:\n"
                 + "   " + taskToMark + "\n"
                 + DIVIDER);
@@ -175,13 +208,10 @@ public class HappyBot {
     /**
      * Marks a selected task as not completed.
      *
-     * @param tasks All tasks.
      * @param userInput The command entered by the user.
-     * @param storage The storage that saves the updated task list.
      * @throws HappyBotException If the task number is invalid.
      */
-    private static void unmarkTask(List<Task> tasks, String userInput, Storage storage)
-            throws HappyBotException {
+    private void unmarkTask(String userInput) throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to unmark.");
         }
@@ -201,7 +231,7 @@ public class HappyBot {
 
         Task taskToUnmark = tasks.get(taskNumber - 1);
         taskToUnmark.unmarkAsDone();
-        saveTasks(storage, tasks);
+        saveTasks();
         System.out.println(" OK, I've marked this task as not done yet:\n"
                 + "   " + taskToUnmark + "\n"
                 + DIVIDER);
@@ -210,13 +240,10 @@ public class HappyBot {
     /**
      * Deletes a selected task from the list.
      *
-     * @param tasks All tasks.
      * @param userInput The command entered by the user.
-     * @param storage The storage that saves the updated task list.
      * @throws HappyBotException If there are no tasks or the task number is invalid.
      */
-    private static void deleteTask(List<Task> tasks, String userInput, Storage storage)
-            throws HappyBotException {
+    private void deleteTask(String userInput) throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to delete.");
         }
@@ -236,7 +263,7 @@ public class HappyBot {
 
         Task taskToDelete = tasks.get(taskNumber - 1);
         tasks.remove(taskNumber - 1);
-        saveTasks(storage, tasks);
+        saveTasks();
         System.out.println(" Alrighties I've removed this task:\n"
                 + "   " + taskToDelete + "\n"
                 + " Now you have " + tasks.size() + " tasks in the list.\n"
@@ -270,11 +297,10 @@ public class HappyBot {
      * <p>Each deadline keeps the number it has in the full list, so one shown here can be marked
      * or deleted with the number displayed beside it.
      *
-     * @param tasks All tasks.
      * @param dateText The date typed by the user.
      * @throws HappyBotException If no date was given or the date cannot be read.
      */
-    private static void printDeadlinesDueOn(List<Task> tasks, String dateText) throws HappyBotException {
+    private void printDeadlinesDueOn(String dateText) throws HappyBotException {
         if (dateText.isBlank()) {
             throw new HappyBotException(DUE_USAGE);
         }
@@ -306,33 +332,14 @@ public class HappyBot {
     }
 
     /**
-     * Starts HappyBot and processes user commands.
-     *
-     * @param args Command-line arguments, which HappyBot does not use.
+     * Greets the user, then reads and carries out commands until the session ends.
      */
-    public static void main(String[] args) {
+    public void run() {
         Scanner scanner = new Scanner(System.in);
-        Storage storage = new Storage(DATA_FILE_PATH);
-        List<Task> tasks = new ArrayList<>();
-        String loadNotice = "";
-
-        try {
-            tasks = storage.loadTasks();
-            if (storage.getSkippedLineCount() > 0) {
-                loadNotice = "Heads up! I skipped " + storage.getSkippedLineCount()
-                        + " unreadable line(s) in your saved data.";
-            }
-        } catch (IOException e) {
-            loadNotice = "Heads up! I could not read " + storage.getFilePath()
-                    + ", so I am starting with an empty task list.";
-        }
-
         boolean isRunning = true;
-        printWelcomeMessage();
 
-        if (!loadNotice.isEmpty()) {
-            printNotice(loadNotice);
-        }
+        printWelcomeMessage();
+        loadSavedTasks();
 
         // Stopping at the end of the input also ends the session cleanly when no bye is typed.
         while (isRunning && scanner.hasNextLine()) {
@@ -351,23 +358,23 @@ public class HappyBot {
                     printTaskList(tasks);
                     break;
                 case "mark":
-                    markTask(tasks, userInput, storage);
+                    markTask(userInput);
                     break;
                 case "unmark":
-                    unmarkTask(tasks, userInput, storage);
+                    unmarkTask(userInput);
                     break;
                 case "delete":
-                    deleteTask(tasks, userInput, storage);
+                    deleteTask(userInput);
                     break;
                 case "due":
-                    printDeadlinesDueOn(tasks, body);
+                    printDeadlinesDueOn(body);
                     break;
                 case "todo":
                     checkTaskText(body);
                     if (body.isBlank()) {
                         throw new HappyBotException("The description of a todo cannot be empty.");
                     }
-                    addTask(tasks, new ToDo(body), storage);
+                    addTask(new ToDo(body));
                     break;
                 case "deadline":
                     checkTaskText(body);
@@ -382,7 +389,7 @@ public class HappyBot {
                         throw new HappyBotException(DEADLINE_USAGE);
                     }
                     LocalDateTime dueDate = parseDateTime(dueDateText);
-                    addTask(tasks, new Deadline(deadlineDescription, dueDate), storage);
+                    addTask(new Deadline(deadlineDescription, dueDate));
                     break;
                 case "event":
                     checkTaskText(body);
@@ -404,7 +411,7 @@ public class HappyBot {
                     if (!startTime.isBefore(endTime)) {
                         throw new HappyBotException("An event must start before it ends.");
                     }
-                    addTask(tasks, new Event(startTime, endTime, eventDescription), storage);
+                    addTask(new Event(startTime, endTime, eventDescription));
                     break;
                 default:
                     throw new HappyBotException("I don't know what that means :-(");
@@ -417,5 +424,14 @@ public class HappyBot {
         }
 
         printGoodbyeMessage();
+    }
+
+    /**
+     * Starts HappyBot.
+     *
+     * @param args Command-line arguments, which HappyBot does not use.
+     */
+    public static void main(String[] args) {
+        new HappyBot(DATA_FILE_PATH).run();
     }
 }

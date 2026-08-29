@@ -7,7 +7,7 @@
 ### Build command
 
 ```sh
-source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes src/main/java/HappyBot.java src/main/java/HappyBotException.java src/main/java/Storage.java src/main/java/Task.java src/main/java/ToDo.java src/main/java/Deadline.java src/main/java/Event.java src/main/java/DatedTask.java
+source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && rm -rf /private/tmp/happybot-ui-test-classes && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes src/main/java/*.java
 ```
 
 ### Run command
