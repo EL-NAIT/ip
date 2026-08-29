@@ -40,4 +40,13 @@ Codex was used for the following:
 5. Helping format HappyBot’s console output.
 6. Creating, updating, and running console UI test cases in `test/ui-test-plan.md`.
 
+Claude Code was used for the following:
+
+1. Implementing Level 7 tasks saving and loading
+2. Handling storage edge cases and errors: corrupted or unreadable data files, a missing data file or folder, failed saves, task text containing the `|` character used as the data file separator, and input that ends without a `bye` command.
+3. Making each save all-or-nothing by writing to a temporary file and renaming it over the data file.
+4. Refactoring the duplicated task-adding code into an `addTask` method.
+5. Explaining the Java library behavior used above, including `Files.write`, `Path.of`, `Path.resolveSibling`, `Scanner.hasNextLine`.
+6. Updating and running the console UI test cases in `test/ui-test-plan.md`, including making each case start from a clean data file and adding cases TC-12 and TC-13.
+
 All AI-generated or AI-suggested code and test cases were personally reviewed before use.
