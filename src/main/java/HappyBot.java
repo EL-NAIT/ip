@@ -34,7 +34,7 @@ public class HappyBot {
     /**
      * Prints every task together with its completion status.
      *
-     * @param tasks the tasks to display
+     * @param tasks The tasks to display.
      */
     private static void printTaskList(List<Task> tasks) {
         StringBuilder taskList = new StringBuilder(" Here are the tasks in your list:\n");
@@ -54,9 +54,9 @@ public class HappyBot {
     /**
      * Marks a selected task as completed.
      *
-     * @param tasks all tasks
-     * @param userInput the command entered by the user
-     * @throws HappyBotException if the task number is invalid
+     * @param tasks All tasks.
+     * @param userInput The command entered by the user.
+     * @throws HappyBotException If the task number is invalid.
      */
     private static void markTask(List<Task> tasks, String userInput)
             throws HappyBotException {
@@ -87,9 +87,9 @@ public class HappyBot {
     /**
      * Marks a selected task as not completed.
      *
-     * @param tasks all tasks
-     * @param userInput the command entered by the user
-     * @throws HappyBotException if the task number is invalid
+     * @param tasks All tasks.
+     * @param userInput The command entered by the user.
+     * @throws HappyBotException If the task number is invalid.
      */
     private static void unmarkTask(List<Task> tasks, String userInput)
             throws HappyBotException {
@@ -120,9 +120,9 @@ public class HappyBot {
     /**
      * Deletes a selected task from the list.
      *
-     * @param tasks all tasks
-     * @param userInput the command entered by the user
-     * @throws HappyBotException if there are no tasks or the task number is invalid
+     * @param tasks All tasks.
+     * @param userInput The command entered by the user.
+     * @throws HappyBotException If there are no tasks or the task number is invalid.
      */
     private static void deleteTask(List<Task> tasks, String userInput)
             throws HappyBotException {
@@ -151,6 +151,11 @@ public class HappyBot {
                 + DIVIDER);
     }
 
+    /**
+     * Starts HappyBot and processes user commands.
+     *
+     * @param args Command-line arguments, which HappyBot does not use.
+     */
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         List<Task> tasks = new ArrayList<>();
@@ -162,12 +167,8 @@ public class HappyBot {
             System.out.println(DIVIDER);
             String[] instructionArray = userInput.split(" ", 2);
             String command = instructionArray[0];
-            String body;
-            if (instructionArray.length == 2) {
-                body = instructionArray[1];
-            } else {
-                body = "";
-            }
+            String body = instructionArray.length == 2 ? instructionArray[1] : "";
+
             try {
                 switch (command) {
                 case "bye":
@@ -204,7 +205,7 @@ public class HappyBot {
                     String deadlineDescription = body.substring(0, deadlineMarkerIndex);
                     String dueDate = body.substring(deadlineMarkerIndex + deadlineMarker.length());
                     if (deadlineDescription.isBlank() || dueDate.isBlank()) {
-                        throw new HappyBotException("Use: deadline <description> /by <due date>");
+                        throw new HappyBotException("Use: deadline <description> /by <due date>.");
                     }
                     tasks.add(new Deadline(deadlineDescription, dueDate));
                     System.out.println(" Got it. I've added this task:\n"
@@ -218,13 +219,15 @@ public class HappyBot {
                     int fromMarkerIndex = body.indexOf(fromMarker);
                     int toMarkerIndex = body.indexOf(toMarker, fromMarkerIndex + fromMarker.length());
                     if (fromMarkerIndex < 0 || toMarkerIndex < 0) {
-                        throw new HappyBotException("Use: event <description> /from <startDate> /to <endDate>.");
+                        throw new HappyBotException(
+                                "Use: event <description> /from <startDate> /to <endDate>.");
                     }
                     String eventDescription = body.substring(0, fromMarkerIndex);
                     String startTime = body.substring(fromMarkerIndex + fromMarker.length(), toMarkerIndex);
                     String endTime = body.substring(toMarkerIndex + toMarker.length());
                     if (eventDescription.isBlank() || startTime.isBlank() || endTime.isBlank()) {
-                        throw new HappyBotException("Use: event <description> /from <startDate> /to <endDate>.");
+                        throw new HappyBotException(
+                                "Use: event <description> /from <startDate> /to <endDate>.");
                     }
                     tasks.add(new Event(startTime, endTime, eventDescription));
                     System.out.println(" Got it. I've added this task:\n"

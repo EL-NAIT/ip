@@ -1,5 +1,5 @@
 /**
- * Represents a task managed by HappyBot
+ * Represents a task managed by HappyBot.
  */
 public class Task {
     protected String description;
@@ -8,7 +8,7 @@ public class Task {
     /**
      * Creates a task with the specified description.
      *
-     * @param description the text entered by the user for this task
+     * @param description The text entered by the user for this task.
      */
     public Task(String description) {
         this.description = description;
@@ -16,14 +16,14 @@ public class Task {
     }
 
     /**
-     * Marks a task as completed
+     * Marks this task as completed.
      */
     public void markAsDone() {
         this.isDone = true;
     }
 
     /**
-     * Unmarks a completed task
+     * Marks this task as not completed.
      */
     public void unmarkAsDone() {
         this.isDone = false;
@@ -38,11 +38,6 @@ public class Task {
         return (isDone ? "X" : " "); // mark done task with X
     }
 
-    /**
-     * Returns the task description and completion status
-     *
-     * @return the task description
-     */
     @Override
     public String toString() {
         return "[" + getStatusIcon() + "] " + description;

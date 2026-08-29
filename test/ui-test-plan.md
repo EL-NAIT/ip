@@ -246,6 +246,7 @@ ____________________________________________________________
 
 ```text
 deadline /by Sunday
+deadline  /by Sunday
 deadline return book /by
 bye
 ```
@@ -261,6 +262,9 @@ H   H  A   A  P      P         Y    B   B  O   O    T
 H   H  A   A  P      P         Y    BBBB    OOO     T
 Hello! I'm HappyBot.
 How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Oops! Use: deadline <description> /by <due date>.
 ____________________________________________________________
 ____________________________________________________________
  Oops! Use: deadline <description> /by <due date>.

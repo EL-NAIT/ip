@@ -1,20 +1,22 @@
 /**
- * Represents a Deadline (a type of task) managed by HappyBot
- * A Deadline has an end date in addition to a description
+ * Represents a task with a due date managed by HappyBot.
  */
 public class Deadline extends Task {
-    protected String end;
-
-    public Deadline(String description, String endDate) {
-         super(description);
-         this.end = endDate;
-    }
+    protected String endDate;
 
     /**
-     * @return the task description and end date of deadline
+     * Creates a deadline task with the specified description and due date.
+     *
+     * @param description The deadline description.
+     * @param endDate The deadline due date.
      */
+    public Deadline(String description, String endDate) {
+        super(description);
+        this.endDate = endDate;
+    }
+
     @Override
     public String toString() {
-        return "[D]" + super.toString() + " (by: " + this.end + ")";
+        return "[D]" + super.toString() + " (by: " + this.endDate + ")";
     }
 }

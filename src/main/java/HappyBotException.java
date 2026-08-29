@@ -1,12 +1,12 @@
 /**
- * Mainly used for handling invalid user inputs into HappyBot
+ * Represents an error caused by an invalid HappyBot command.
  */
 public class HappyBotException extends Exception {
 
     /**
      * Creates an exception with a message that explains the invalid command.
      *
-     * @param message the explanation of the input error
+     * @param message The explanation of the input error.
      */
     public HappyBotException(String message) {
         super(message);
