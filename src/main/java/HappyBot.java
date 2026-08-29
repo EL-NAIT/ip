@@ -6,17 +6,18 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Scanner;
+import java.util.Map;
 
 /**
  * Runs the HappyBot chatbot application.
  *
- * <p>A HappyBot object owns the task list and the storage that saves it, so the methods that
- * work on them read those from the object instead of receiving them as parameters.
+ * <p>A HappyBot object owns the task list, the storage that saves it, and the user interface
+ * that reads commands and prints replies. Console text is built by Ui alone, so this class is
+ * left with the task list and the meaning of each command.
  */
 public class HappyBot {
-    private static final String DIVIDER = "____________________________________________________________";
     private static final Path DATA_FILE_PATH = Path.of("data", "HappyBot.txt");
 
     /** Usage messages that show where a date belongs in each command. */
@@ -38,11 +39,9 @@ public class HappyBot {
     private static final String DATE_FORMAT_HINT =
             "Please write dates as yyyy-MM-dd or d/M/yyyy, with an optional 24-hour time that "
                     + "defaults to 0000, such as 2019-12-02 1800.";
-    private static final String BANNER = "H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT\n"
-            + "H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T\n"
-            + "HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T\n"
-            + "H   H  A   A  P      P         Y    B   B  O   O    T\n"
-            + "H   H  A   A  P      P         Y    BBBB    OOO     T\n";
+
+    /** User interface that reads the commands and prints every reply. */
+    private final Ui ui;
 
     /** Storage that loads the saved tasks at startup and saves them after every change. */
     private final Storage storage;
@@ -59,55 +58,9 @@ public class HappyBot {
      * @param filePath The location of the task data file.
      */
     public HappyBot(Path filePath) {
+        this.ui = new Ui();
         this.storage = new Storage(filePath);
         this.tasks = new ArrayList<>();
-    }
-
-    /**
-     * Prints HappyBot's welcome message.
-     */
-    private static void printWelcomeMessage() {
-        System.out.println(DIVIDER + "\n"
-                + BANNER
-                + "Hello! I'm HappyBot.\n"
-                + "How can I cheer you up today?\n"
-                + DIVIDER);
-    }
-
-    /**
-     * Prints HappyBot's farewell message.
-     */
-    private static void printGoodbyeMessage() {
-        System.out.println("Bye. Hope to see you again soon!\n" + DIVIDER);
-    }
-
-    /**
-     * Prints every task together with its completion status.
-     *
-     * @param tasks The tasks to display.
-     */
-    private static void printTaskList(List<Task> tasks) {
-        StringBuilder taskList = new StringBuilder(" Here are the tasks in your list:\n");
-
-        for (int i = 0; i < tasks.size(); i++) {
-            taskList.append(" ")
-                    .append(i + 1)
-                    .append(".")
-                    .append(tasks.get(i))
-                    .append("\n");
-        }
-
-        taskList.append(DIVIDER);
-        System.out.println(taskList);
-    }
-
-    /**
-     * Prints a standalone notice inside the usual divider lines.
-     *
-     * @param notice The message to display.
-     */
-    private static void printNotice(String notice) {
-        System.out.println(DIVIDER + "\n " + notice + "\n" + DIVIDER);
     }
 
     /**
@@ -120,12 +73,10 @@ public class HappyBot {
         try {
             tasks = storage.loadTasks();
             if (storage.getSkippedLineCount() > 0) {
-                printNotice("Heads up! I skipped " + storage.getSkippedLineCount()
-                        + " unreadable line(s) in your saved data.");
+                ui.showSkippedLinesNotice(storage.getSkippedLineCount());
             }
         } catch (IOException e) {
-            printNotice("Heads up! I could not read " + storage.getFilePath()
-                    + ", so I am starting with an empty task list.");
+            ui.showLoadingError(storage.getFilePath());
         }
     }
 
@@ -139,8 +90,7 @@ public class HappyBot {
         try {
             storage.saveTasks(tasks);
         } catch (IOException e) {
-            System.out.println(" Heads up! I could not save your tasks to "
-                    + storage.getFilePath() + ".\n" + DIVIDER);
+            ui.showSavingError(storage.getFilePath());
         }
     }
 
@@ -167,10 +117,7 @@ public class HappyBot {
     private void addTask(Task taskToAdd) {
         tasks.add(taskToAdd);
         saveTasks();
-        System.out.println(" Got it. I've added this task:\n"
-                + "   " + taskToAdd + "\n"
-                + " Now you have " + tasks.size() + " tasks in the list.\n"
-                + DIVIDER);
+        ui.showAddedTask(taskToAdd, tasks.size());
     }
 
     /**
@@ -200,9 +147,7 @@ public class HappyBot {
         Task taskToMark = tasks.get(taskNumber - 1);
         taskToMark.markAsDone();
         saveTasks();
-        System.out.println(" Nice! I've marked this task as done:\n"
-                + "   " + taskToMark + "\n"
-                + DIVIDER);
+        ui.showMarkedTask(taskToMark);
     }
 
     /**
@@ -232,9 +177,7 @@ public class HappyBot {
         Task taskToUnmark = tasks.get(taskNumber - 1);
         taskToUnmark.unmarkAsDone();
         saveTasks();
-        System.out.println(" OK, I've marked this task as not done yet:\n"
-                + "   " + taskToUnmark + "\n"
-                + DIVIDER);
+        ui.showUnmarkedTask(taskToUnmark);
     }
 
     /**
@@ -264,10 +207,7 @@ public class HappyBot {
         Task taskToDelete = tasks.get(taskNumber - 1);
         tasks.remove(taskNumber - 1);
         saveTasks();
-        System.out.println(" Alrighties I've removed this task:\n"
-                + "   " + taskToDelete + "\n"
-                + " Now you have " + tasks.size() + " tasks in the list.\n"
-                + DIVIDER);
+        ui.showDeletedTask(taskToDelete, tasks.size());
     }
 
     /**
@@ -292,15 +232,15 @@ public class HappyBot {
     }
 
     /**
-     * Prints the deadlines due on the specified date.
+     * Shows the deadlines due on the specified date.
      *
-     * <p>Each deadline keeps the number it has in the full list, so one shown here can be marked
-     * or deleted with the number displayed beside it.
+     * <p>Each deadline is collected under the number it has in the full list, so one shown here
+     * can be marked or deleted with the number displayed beside it.
      *
      * @param dateText The date typed by the user.
      * @throws HappyBotException If no date was given or the date cannot be read.
      */
-    private void printDeadlinesDueOn(String dateText) throws HappyBotException {
+    private void showDeadlinesDueOn(String dateText) throws HappyBotException {
         if (dateText.isBlank()) {
             throw new HappyBotException(DUE_USAGE);
         }
@@ -308,43 +248,33 @@ public class HappyBot {
         LocalDate date = parseDateTime(dateText).toLocalDate();
         // Reusing the task display keeps one source of truth for how a date is written.
         String displayedDate = DatedTask.formatDate(date);
-        StringBuilder matchingTasks = new StringBuilder();
+        // A LinkedHashMap keeps the deadlines in list order while remembering each task number.
+        Map<Integer, Task> matchingTasks = new LinkedHashMap<>();
 
         for (int i = 0; i < tasks.size(); i++) {
             // A todo and an event have no due date, so only a deadline can match.
             if (tasks.get(i) instanceof Deadline deadline
                     && deadline.getEndDate().toLocalDate().equals(date)) {
-                matchingTasks.append(" ")
-                        .append(i + 1)
-                        .append(".")
-                        .append(tasks.get(i))
-                        .append("\n");
+                matchingTasks.put(i + 1, deadline);
             }
         }
 
-        if (matchingTasks.isEmpty()) {
-            System.out.println(" There are no deadlines due on " + displayedDate + ".\n" + DIVIDER);
-            return;
-        }
-
-        System.out.println(" Here are the deadlines due on " + displayedDate + ":\n"
-                + matchingTasks + DIVIDER);
+        ui.showDeadlinesDueOn(displayedDate, matchingTasks);
     }
 
     /**
      * Greets the user, then reads and carries out commands until the session ends.
      */
     public void run() {
-        Scanner scanner = new Scanner(System.in);
         boolean isRunning = true;
 
-        printWelcomeMessage();
+        ui.showWelcome();
         loadSavedTasks();
 
         // Stopping at the end of the input also ends the session cleanly when no bye is typed.
-        while (isRunning && scanner.hasNextLine()) {
-            String userInput = scanner.nextLine();
-            System.out.println(DIVIDER);
+        while (isRunning && ui.hasNextCommand()) {
+            String userInput = ui.readCommand();
+            ui.showDivider();
             String[] instructionArray = userInput.split(" ", 2);
             String command = instructionArray[0];
             String body = instructionArray.length == 2 ? instructionArray[1] : "";
@@ -355,7 +285,7 @@ public class HappyBot {
                     isRunning = false;
                     break;
                 case "list":
-                    printTaskList(tasks);
+                    ui.showTaskList(tasks);
                     break;
                 case "mark":
                     markTask(userInput);
@@ -367,7 +297,7 @@ public class HappyBot {
                     deleteTask(userInput);
                     break;
                 case "due":
-                    printDeadlinesDueOn(body);
+                    showDeadlinesDueOn(body);
                     break;
                 case "todo":
                     checkTaskText(body);
@@ -417,13 +347,13 @@ public class HappyBot {
                     throw new HappyBotException("I don't know what that means :-(");
                 }
             } catch (HappyBotException e) {
-                System.out.println(" Oops! " + e.getMessage() + "\n" + DIVIDER);
+                ui.showError(e.getMessage());
             } catch (DateTimeParseException e) {
-                System.out.println(" Oops! " + DATE_FORMAT_HINT + "\n" + DIVIDER);
+                ui.showError(DATE_FORMAT_HINT);
             }
         }
 
-        printGoodbyeMessage();
+        ui.showGoodbye();
     }
 
     /**
