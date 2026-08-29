@@ -22,6 +22,22 @@ HappyBot loads `data/HappyBot.txt` on startup, so tasks saved by one test case
 would otherwise be visible to the next one. The run command deletes that file
 before each case so that every case starts from an empty task list.
 
+### Checks that stay manual
+
+Deleting the data file also puts the two startup notices out of reach, because
+both need saved data that is already there and already broken. The runner has
+one run command for every case and no per-case setup, so these two are checked
+by hand from a scratch directory holding a `data/HappyBot.txt`:
+
+- a file with unreadable lines prints
+  `Heads up! I skipped <n> unreadable line(s) in your saved data.`
+- a file that cannot be read at all prints
+  `Heads up! I could not read data/HappyBot.txt, so I am starting with an empty
+  task list.`
+
+Both notices appear between the welcome message and the first command, inside
+their own pair of divider lines.
+
 ## Test cases
 
 ### TC-01: Exit the program

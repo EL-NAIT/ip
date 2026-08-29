@@ -79,13 +79,13 @@ public class Ui {
      * @param tasks The tasks to display, numbered from one in the order given.
      */
     public void showTaskList(List<Task> tasks) {
-        StringBuilder taskList = new StringBuilder(" Here are the tasks in your list:\n");
+        StringBuilder taskList = new StringBuilder(" Here are the tasks in your list:");
 
         for (int i = 0; i < tasks.size(); i++) {
-            taskList.append(formatEntry(i + 1, tasks.get(i)));
+            taskList.append("\n").append(formatEntry(i + 1, tasks.get(i)));
         }
 
-        System.out.println(taskList + DIVIDER);
+        showReply(taskList.toString());
     }
 
     /**
@@ -104,13 +104,14 @@ public class Ui {
         }
 
         StringBuilder matchingTasks =
-                new StringBuilder(" Here are the deadlines due on " + displayedDate + ":\n");
+                new StringBuilder(" Here are the deadlines due on " + displayedDate + ":");
 
         for (Map.Entry<Integer, Task> numberedDeadline : numberedDeadlines.entrySet()) {
-            matchingTasks.append(formatEntry(numberedDeadline.getKey(), numberedDeadline.getValue()));
+            matchingTasks.append("\n")
+                    .append(formatEntry(numberedDeadline.getKey(), numberedDeadline.getValue()));
         }
 
-        System.out.println(matchingTasks + DIVIDER);
+        showReply(matchingTasks.toString());
     }
 
     /**
@@ -163,8 +164,9 @@ public class Ui {
      * @param filePath The location of the data file.
      */
     public void showLoadingError(Path filePath) {
-        showNotice("Heads up! I could not read " + filePath
-                + ", so I am starting with an empty task list.");
+        // A notice answers no command, so it opens a block of its own instead of closing one.
+        System.out.println(DIVIDER + "\n Heads up! I could not read " + filePath
+                + ", so I am starting with an empty task list.\n" + DIVIDER);
     }
 
     /**
@@ -173,8 +175,9 @@ public class Ui {
      * @param skippedLineCount The number of lines that were skipped.
      */
     public void showSkippedLinesNotice(int skippedLineCount) {
-        showNotice("Heads up! I skipped " + skippedLineCount
-                + " unreadable line(s) in your saved data.");
+        // A notice answers no command, so it opens a block of its own instead of closing one.
+        System.out.println(DIVIDER + "\n Heads up! I skipped " + skippedLineCount
+                + " unreadable line(s) in your saved data.\n" + DIVIDER);
     }
 
     /**
@@ -198,8 +201,9 @@ public class Ui {
     /**
      * Prints a reply to a command, followed by the closing divider.
      *
-     * <p>The opening divider is printed by showDivider() as soon as the command is read, so a
-     * reply only has to close its own block.
+     * <p>Every reply to a command ends here, so the closing divider is written once rather than
+     * in each of the nine methods above. The opening divider is printed by showDivider() as soon
+     * as the command is read, so a reply only has to close the block.
      *
      * @param reply The reply text, with each line already indented.
      */
@@ -208,22 +212,13 @@ public class Ui {
     }
 
     /**
-     * Prints a message that belongs to no command, inside its own pair of dividers.
-     *
-     * @param notice The message to display.
-     */
-    private void showNotice(String notice) {
-        System.out.println(DIVIDER + "\n " + notice + "\n" + DIVIDER);
-    }
-
-    /**
-     * Returns the display text of one numbered task, ending with a line break.
+     * Returns the display text of one numbered task, without a line break of its own.
      *
      * @param taskNumber The number shown beside the task.
      * @param task The task to display.
      * @return The numbered task line.
      */
     private static String formatEntry(int taskNumber, Task task) {
-        return " " + taskNumber + "." + task + "\n";
+        return " " + taskNumber + "." + task;
     }
 }
