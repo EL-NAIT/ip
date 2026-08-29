@@ -7,7 +7,7 @@
 ### Build command
 
 ```sh
-source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes src/main/java/HappyBot.java src/main/java/HappyBotException.java src/main/java/Storage.java src/main/java/Task.java src/main/java/ToDo.java src/main/java/Deadline.java src/main/java/Event.java
+source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes src/main/java/HappyBot.java src/main/java/HappyBotException.java src/main/java/Storage.java src/main/java/Task.java src/main/java/ToDo.java src/main/java/Deadline.java src/main/java/Event.java src/main/java/DatedTask.java
 ```
 
 ### Run command
@@ -201,13 +201,13 @@ ____________________________________________________________
 
 ### TC-06: Add deadline and event tasks
 
-**Aim:** Confirm that HappyBot stores the specified deadline and event details as strings.
+**Aim:** Confirm that HappyBot accepts yyyy-MM-dd dates and displays them as MMM dd yyyy with the time.
 
 #### Inputs
 
 ```text
-deadline return book /by Sunday
-event project meeting /from Mon 2pm /to 4pm
+deadline return book /by 2019-10-15
+event project meeting /from 2019-08-06 /to 2019-08-07
 list
 bye
 ```
@@ -226,18 +226,18 @@ How can I cheer you up today?
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Sunday)
+   [D][ ] return book (by: Oct 15 2019 12:00AM)
  Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] project meeting (from: Mon 2pm to: 4pm)
+   [E][ ] project meeting (from: Aug 06 2019 12:00AM to: Aug 07 2019 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
- 1.[D][ ] return book (by: Sunday)
- 2.[E][ ] project meeting (from: Mon 2pm to: 4pm)
+ 1.[D][ ] return book (by: Oct 15 2019 12:00AM)
+ 2.[E][ ] project meeting (from: Aug 06 2019 12:00AM to: Aug 07 2019 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -270,13 +270,13 @@ Hello! I'm HappyBot.
 How can I cheer you up today?
 ____________________________________________________________
 ____________________________________________________________
- Oops! Use: deadline <description> /by <due date>.
+ Oops! Use: deadline <description> /by <yyyy-MM-dd>.
 ____________________________________________________________
 ____________________________________________________________
- Oops! Use: deadline <description> /by <due date>.
+ Oops! Use: deadline <description> /by <yyyy-MM-dd>.
 ____________________________________________________________
 ____________________________________________________________
- Oops! Use: deadline <description> /by <due date>.
+ Oops! Use: deadline <description> /by <yyyy-MM-dd>.
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -309,13 +309,13 @@ Hello! I'm HappyBot.
 How can I cheer you up today?
 ____________________________________________________________
 ____________________________________________________________
- Oops! Use: event <description> /from <startDate> /to <endDate>.
+ Oops! Use: event <description> /from <yyyy-MM-dd> /to <yyyy-MM-dd>.
 ____________________________________________________________
 ____________________________________________________________
- Oops! Use: event <description> /from <startDate> /to <endDate>.
+ Oops! Use: event <description> /from <yyyy-MM-dd> /to <yyyy-MM-dd>.
 ____________________________________________________________
 ____________________________________________________________
- Oops! Use: event <description> /from <startDate> /to <endDate>.
+ Oops! Use: event <description> /from <yyyy-MM-dd> /to <yyyy-MM-dd>.
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -383,8 +383,8 @@ ____________________________________________________________
 
 ```text
 todo read book
-deadline return book /by Sunday
-event project meeting /from Mon 2pm /to 4pm
+deadline return book /by 2019-10-15
+event project meeting /from 2019-08-06 /to 2019-08-07
 delete 2
 list
 bye
@@ -409,23 +409,23 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Sunday)
+   [D][ ] return book (by: Oct 15 2019 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] project meeting (from: Mon 2pm to: 4pm)
+   [E][ ] project meeting (from: Aug 06 2019 12:00AM to: Aug 07 2019 12:00AM)
  Now you have 3 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Alrighties I've removed this task:
-   [D][ ] return book (by: Sunday)
+   [D][ ] return book (by: Oct 15 2019 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
  1.[T][ ] read book
- 2.[E][ ] project meeting (from: Mon 2pm to: 4pm)
+ 2.[E][ ] project meeting (from: Aug 06 2019 12:00AM to: Aug 07 2019 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -557,6 +557,301 @@ ____________________________________________________________
  Got it. I've added this task:
    [T][ ] read book
  Now you have 1 tasks in the list.
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-14: Reject dates that are not in the accepted pattern
+
+**Aim:** Confirm that HappyBot rejects dates that match none of the accepted date patterns.
+
+#### Inputs
+
+```text
+deadline return book /by Sunday
+event project meeting /from Mon /to Tue
+deadline return book /by 2019-13-45
+list
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Oops! Please write dates as yyyy-MM-dd or d/M/yyyy, with an optional 24-hour time that defaults to 0000, such as 2019-12-02 1800.
+____________________________________________________________
+____________________________________________________________
+ Oops! Please write dates as yyyy-MM-dd or d/M/yyyy, with an optional 24-hour time that defaults to 0000, such as 2019-12-02 1800.
+____________________________________________________________
+____________________________________________________________
+ Oops! Please write dates as yyyy-MM-dd or d/M/yyyy, with an optional 24-hour time that defaults to 0000, such as 2019-12-02 1800.
+____________________________________________________________
+____________________________________________________________
+ Here are the tasks in your list:
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-15: Accept an optional time and both date patterns
+
+**Aim:** Confirm that HappyBot reads a 24-hour time after a date, accepts the d/M/yyyy pattern, and defaults a missing time to 0000.
+
+#### Inputs
+
+```text
+deadline return book /by 2/12/2019 1800
+deadline pay fees /by 2019-10-15
+event orientation /from 2019-12-01 0900 /to 2019-12-03 1700
+list
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] return book (by: Dec 02 2019 6:00PM)
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] pay fees (by: Oct 15 2019 12:00AM)
+ Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [E][ ] orientation (from: Dec 01 2019 9:00AM to: Dec 03 2019 5:00PM)
+ Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Here are the tasks in your list:
+ 1.[D][ ] return book (by: Dec 02 2019 6:00PM)
+ 2.[D][ ] pay fees (by: Oct 15 2019 12:00AM)
+ 3.[E][ ] orientation (from: Dec 01 2019 9:00AM to: Dec 03 2019 5:00PM)
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-16: Reject an event that does not start before it ends
+
+**Aim:** Confirm that HappyBot rejects an event whose start is after or equal to its end, and accepts one that starts earlier on the same day.
+
+#### Inputs
+
+```text
+event trip /from 2019-08-08 /to 2019-08-06
+event trip /from 2019-08-06 /to 2019-08-06
+event trip /from 2019-08-06 0900 /to 2019-08-06 1700
+list
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Oops! An event must start before it ends.
+____________________________________________________________
+____________________________________________________________
+ Oops! An event must start before it ends.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [E][ ] trip (from: Aug 06 2019 9:00AM to: Aug 06 2019 5:00PM)
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Here are the tasks in your list:
+ 1.[E][ ] trip (from: Aug 06 2019 9:00AM to: Aug 06 2019 5:00PM)
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-17: List the deadlines due on one date
+
+**Aim:** Confirm that the due command shows only deadlines due on the given date, leaves out todos and events, keeps each task's number from the full list, and accepts either date pattern.
+
+#### Inputs
+
+```text
+todo read book
+deadline return book /by 2019-12-02 1800
+event orientation /from 2019-12-01 /to 2019-12-03
+deadline pay fees /by 2019-12-02
+due 2019-12-02
+due 2/12/2019
+due 2019-12-05
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [T][ ] read book
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] return book (by: Dec 02 2019 6:00PM)
+ Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+ Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] pay fees (by: Dec 02 2019 12:00AM)
+ Now you have 4 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Here are the deadlines due on Dec 02 2019:
+ 2.[D][ ] return book (by: Dec 02 2019 6:00PM)
+ 4.[D][ ] pay fees (by: Dec 02 2019 12:00AM)
+____________________________________________________________
+____________________________________________________________
+ Here are the deadlines due on Dec 02 2019:
+ 2.[D][ ] return book (by: Dec 02 2019 6:00PM)
+ 4.[D][ ] pay fees (by: Dec 02 2019 12:00AM)
+____________________________________________________________
+____________________________________________________________
+ There are no deadlines due on Dec 05 2019.
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-18: Reject invalid due commands
+
+**Aim:** Confirm that HappyBot rejects a due command with no date or an unreadable date.
+
+#### Inputs
+
+```text
+due
+due someday
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Oops! Use: due <date>, such as due 2019-12-02.
+____________________________________________________________
+____________________________________________________________
+ Oops! Please write dates as yyyy-MM-dd or d/M/yyyy, with an optional 24-hour time that defaults to 0000, such as 2019-12-02 1800.
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-19: Accept extra spaces around a date and time
+
+**Aim:** Confirm that HappyBot accepts more than one space between a date and its time, and spaces around the date itself.
+
+#### Inputs
+
+```text
+deadline return book /by 2019-12-02    1800
+deadline pay fees /by   2/12/2019 1800
+event orientation /from  2019-12-01   0900 /to 2019-12-03    1700
+list
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] return book (by: Dec 02 2019 6:00PM)
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] pay fees (by: Dec 02 2019 6:00PM)
+ Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [E][ ] orientation (from: Dec 01 2019 9:00AM to: Dec 03 2019 5:00PM)
+ Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Here are the tasks in your list:
+ 1.[D][ ] return book (by: Dec 02 2019 6:00PM)
+ 2.[D][ ] pay fees (by: Dec 02 2019 6:00PM)
+ 3.[E][ ] orientation (from: Dec 01 2019 9:00AM to: Dec 03 2019 5:00PM)
+____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
 ____________________________________________________________

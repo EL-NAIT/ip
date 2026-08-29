@@ -3,6 +3,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,8 +109,9 @@ public class Storage {
     /**
      * Loads the previously saved tasks from the data file.
      *
-     * <p>Lines that do not follow the storage format are skipped and counted rather than
-     * abandoning the tasks that were read successfully.
+     * <p>Lines that do not follow the storage format, including lines holding a date that
+     * cannot be read, are skipped and counted rather than abandoning the tasks that were read
+     * successfully.
      *
      * @return A modifiable list of the tasks that were read successfully.
      * @throws IOException If the data file exists but cannot be read.
@@ -134,7 +137,7 @@ public class Storage {
 
             try {
                 tasks.add(parseTask(taskLine));
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | DateTimeParseException e) {
                 skippedLineCount++;
             }
         }
@@ -157,12 +160,13 @@ public class Storage {
 
         if (task instanceof Deadline deadline) {
             return String.join(FIELD_SEPARATOR, TASK_TYPE_DEADLINE, completionStatus,
-                    deadline.getDescription(), deadline.getEndDate());
+                    deadline.getDescription(), deadline.getEndDate().toString());
         }
 
         if (task instanceof Event event) {
             return String.join(FIELD_SEPARATOR, TASK_TYPE_EVENT, completionStatus,
-                    event.getDescription(), event.getStartTime(), event.getEndTime());
+                    event.getDescription(), event.getStartTime().toString(),
+                    event.getEndTime().toString());
         }
 
         throw new IllegalArgumentException("Unsupported task type.");
@@ -174,6 +178,7 @@ public class Storage {
      * @param taskLine The saved line to parse.
      * @return The task described by the line.
      * @throws IllegalArgumentException If the line does not follow the storage format.
+     * @throws DateTimeParseException If a date field is not a date and time in ISO form.
      */
     private Task parseTask(String taskLine) {
         String[] fields = taskLine.split(FIELD_SEPARATOR_REGEX);
@@ -189,11 +194,12 @@ public class Storage {
             break;
         case TASK_TYPE_DEADLINE:
             checkFieldCount(fields, FIELD_COUNT_DEADLINE, taskLine);
-            task = new Deadline(fields[2], fields[3]);
+            task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
             break;
         case TASK_TYPE_EVENT:
             checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
-            task = new Event(fields[3], fields[4], fields[2]);
+            task = new Event(LocalDateTime.parse(fields[3]),
+                    LocalDateTime.parse(fields[4]), fields[2]);
             break;
         default:
             throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);

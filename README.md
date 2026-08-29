@@ -22,7 +22,7 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    H   H  A   A  P      P         Y    B   B  O   O    T
    H   H  A   A  P      P         Y    BBBB    OOO     T
    Hello! I'm HappyBot.
-   What can I do for you?
+   How can I cheer you up today?
    ____________________________________________________________
    
    ```
@@ -48,5 +48,17 @@ Claude Code was used for the following:
 4. Refactoring the duplicated task-adding code into an `addTask` method.
 5. Explaining the Java library behavior used above, including `Files.write`, `Path.of`, `Path.resolveSibling`, `Scanner.hasNextLine`.
 6. Updating and running the console UI test cases in `test/ui-test-plan.md`, including making each case start from a clean data file and adding cases TC-12 and TC-13.
+
+Claude Code was used for the Level 8 date and time increment:
+
+1. Replacing the `String` due date in `Deadline` and the start and end fields in `Event` with `java.time.LocalDateTime`.
+2. Parsing command dates in either the `yyyy-MM-dd` or `d/M/yyyy` pattern, with an optional 24-hour time that defaults to `0000`.
+3. Adding the `DatedTask` superclass so `Deadline` and `Event` share one display format.
+4. Rejecting an event whose start is not before its end.
+5. Adding the `due <date>` command
+6. Storing dates in the data file in ISO form so that times survive saving and loading, and skipping saved lines whose dates cannot be read.
+7. Updating and running the console UI test cases in `test/ui-test-plan.md`, adding cases TC-14 to TC-19.
+
+Several designs suggested by Claude Code were rejected in favour of simpler code that relies on the Java standard library.
 
 All AI-generated or AI-suggested code and test cases were personally reviewed before use.
