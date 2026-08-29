@@ -1,45 +1,48 @@
-/**
- * Represents a task with a start and end time managed by HappyBot.
- */
-public class Event extends Task {
+import java.time.LocalDateTime;
 
-    protected String startTime;
-    protected String endTime;
+/**
+ * Represents a task with a start and end date managed by HappyBot.
+ */
+public class Event extends DatedTask {
+
+    protected LocalDateTime startTime;
+    protected LocalDateTime endTime;
 
     /**
-     * Creates an event task with the specified description and time range.
+     * Creates an event task with the specified description and date range.
      *
-     * @param start The event start time.
-     * @param end The event end time.
+     * @param start The event start date.
+     * @param end The event end date.
      * @param description The event description.
      */
-    public Event(String start, String end, String description) {
+    public Event(LocalDateTime start, LocalDateTime end, String description) {
         super(description);
         this.startTime = start;
         this.endTime = end;
     }
 
     /**
-     * Returns the event start time.
+     * Returns the event start date.
      *
-     * @return The event start time.
+     * @return The event start date.
      */
-    public String getStartTime() {
+    public LocalDateTime getStartTime() {
         return startTime;
     }
 
     /**
-     * Returns the event end time.
+     * Returns the event end date.
      *
-     * @return The event end time.
+     * @return The event end date.
      */
-    public String getEndTime() {
+    public LocalDateTime getEndTime() {
         return endTime;
     }
 
     @Override
     public String toString() {
         return "[E]" + super.toString()
-                + " (from: " + this.startTime + " to: " + this.endTime + ")";
+                + " (from: " + formatDate(this.startTime)
+                + " to: " + formatDate(this.endTime) + ")";
     }
 }
