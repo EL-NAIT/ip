@@ -1,7 +1,11 @@
+package happybot;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+
+import happybot.task.Task;
 
 /**
  * Deals with interactions with the user.

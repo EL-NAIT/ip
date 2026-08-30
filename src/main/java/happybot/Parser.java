@@ -1,8 +1,14 @@
+package happybot;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+
+import happybot.task.Deadline;
+import happybot.task.Event;
+import happybot.task.ToDo;
 
 /**
  * Deals with making sense of the user command.

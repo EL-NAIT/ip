@@ -1,3 +1,5 @@
+package happybot;
+
 /**
  * Represents an error caused by an invalid HappyBot command.
  */

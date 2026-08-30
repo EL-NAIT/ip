@@ -13,7 +13,7 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    3. If there are any further prompts, accept the defaults.
 3. Configure the project to use **JDK 25** (not other versions) as explained in [here](https://www.jetbrains.com/help/idea/sdk.html#set-up-jdk).<br>
    In the same dialog, set the **Project language level** field to the `SDK default` option.
-4. After that, locate the `src/main/java/HappyBot.java` file, right-click it, and choose `Run HappyBot.main()` (if the code editor is showing compile errors, try restarting the IDE). If the setup is correct, you should see something like the below as the output:
+4. After that, locate the `src/main/java/happybot/HappyBot.java` file, right-click it, and choose `Run HappyBot.main()` (if the code editor is showing compile errors, try restarting the IDE). If the setup is correct, you should see something like the below as the output:
    ```
    ____________________________________________________________
    H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
@@ -61,6 +61,10 @@ Claude Code was used for the Level 8 date and time increment:
 
 Claude Code was used for the A-MoreOOP increment: turning `HappyBot` into an object and extracting the `Ui`, `Parser`, 
 and `TaskList` classes out of it in five small steps, running the console UI test cases after each one.
+
+Claude Code was used for the A-Packages increment: proposing the `happybot` and
+`happybot.task` package structure with the alternatives weighed, moving the classes
+into it, and updating the UI test plan runner commands and the README setup path.
 
 Several designs suggested by Claude Code were rejected in favour of simpler code that relies on the Java standard library.
 

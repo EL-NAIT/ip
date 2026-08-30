@@ -1,3 +1,5 @@
+package happybot.task;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,10 +30,13 @@ public abstract class DatedTask extends Task {
     /**
      * Returns the text used to show a date on its own.
      *
+     * <p>This is public because HappyBot writes a date of its own when it lists the deadlines
+     * due on one day, and reusing this keeps one source of truth for how a date is written.
+     *
      * @param date The date to display.
      * @return The date written in the display pattern, such as Oct 15 2019.
      */
-    protected static String formatDate(LocalDate date) {
+    public static String formatDate(LocalDate date) {
         // Locale.ENGLISH keeps the month name the same on every machine.
         return date.format(DateTimeFormatter.ofPattern(DISPLAY_FORMAT, Locale.ENGLISH));
     }

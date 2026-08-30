@@ -7,13 +7,13 @@
 ### Build command
 
 ```sh
-source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && rm -rf /private/tmp/happybot-ui-test-classes && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes src/main/java/*.java
+source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && rm -rf /private/tmp/happybot-ui-test-classes && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes $(find src/main/java -name "*.java")
 ```
 
 ### Run command
 
 ```sh
-source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && rm -f data/HappyBot.txt && java -cp /private/tmp/happybot-ui-test-classes HappyBot
+source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && rm -f data/HappyBot.txt && java -cp /private/tmp/happybot-ui-test-classes happybot.HappyBot
 ```
 
 ### Test isolation

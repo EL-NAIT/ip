@@ -1,3 +1,5 @@
+package happybot.task;
+
 /**
  * Represents a task managed by HappyBot.
  */
