@@ -90,6 +90,20 @@ After every code update:
 
 ## Git
 
-Use lightweight tags unless the user requests an annotated tag.
-When proposing or creating a commit message, include enough detail to explain the rationale for the change.
-Do not commit or push unless explicitly asked.
+Every commit and branch in this repository must follow the SE-EDU Git conventions at
+<https://se-education.org/guides/conventions/git.html>. This is mandatory, not advisory: write
+every future commit message and branch name to the standard.
+
+The full rules, and the commands that check history against them, live in the
+`seedu-git-standard` skill. In Claude Code, use the skill in `.claude/skills/seedu-git-standard/`.
+In Codex, invoke it as `$seedu-git-standard`. Read that skill before writing or proposing a
+commit message or creating a branch.
+
+Where this file and the skill appear to differ, the skill is correct: it holds the full
+standard, while this file only points to it.
+
+These project rules sit alongside the standard, which does not cover them:
+
+* Use lightweight tags unless the user requests an annotated tag.
+* Give the body enough detail to explain the rationale for the change.
+* Do not commit or push unless explicitly asked.
