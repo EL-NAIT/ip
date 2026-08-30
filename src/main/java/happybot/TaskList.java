@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import happybot.task.Deadline;
@@ -119,6 +120,33 @@ public class TaskList {
             if (tasks.get(i) instanceof Deadline deadline
                     && deadline.getEndDate().toLocalDate().equals(date)) {
                 matchingTasks.put(i + 1, deadline);
+            }
+        }
+
+        return matchingTasks;
+    }
+
+    /**
+     * Returns the tasks whose description holds the specified keyword, each under its task number.
+     *
+     * <p>The search ignores capitalization, so "Book" finds a task described as "read book". The
+     * numbers are the ones the full list gives, so a task found here can be marked or deleted by
+     * the number shown beside it.
+     *
+     * @param keyword The text to look for in each description.
+     * @return The matching tasks in list order, stored under their task numbers.
+     */
+    public Map<Integer, Task> findTasksContaining(String keyword) {
+        // A LinkedHashMap keeps the tasks in list order while remembering each task number.
+        Map<Integer, Task> matchingTasks = new LinkedHashMap<>();
+        // Locale.ROOT keeps the lowercasing the same on every machine, unlike the default
+        // locale, which lowercases the letter I differently in Turkish.
+        String loweredKeyword = keyword.toLowerCase(Locale.ROOT);
+
+        for (int i = 0; i < tasks.size(); i++) {
+            String description = tasks.get(i).getDescription().toLowerCase(Locale.ROOT);
+            if (description.contains(loweredKeyword)) {
+                matchingTasks.put(i + 1, tasks.get(i));
             }
         }
 

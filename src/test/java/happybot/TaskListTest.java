@@ -198,6 +198,68 @@ public class TaskListTest {
 
     // ==================== findDeadlinesDueOn ====================
 
+    // ==================== findTasksContaining ====================
+
+    @Test
+    public void findTasksContaining_keywordInDescription_foundUnderTaskNumbers() {
+        TaskList taskList = buildListOfThree();
+
+        Map<Integer, Task> found = taskList.findTasksContaining("book");
+
+        // The numbers are the ones the full list shows, so a match can be marked or deleted by them.
+        assertEquals(List.of(1, 2), new ArrayList<>(found.keySet()));
+        assertEquals("read book", found.get(1).getDescription());
+        assertEquals("return book", found.get(2).getDescription());
+    }
+
+    @Test
+    public void findTasksContaining_differentCapitalization_taskStillFound() {
+        TaskList taskList = buildListOfThree();
+
+        assertEquals(2, taskList.findTasksContaining("BOOK").size());
+        assertEquals(2, taskList.findTasksContaining("BoOk").size());
+    }
+
+    @Test
+    public void findTasksContaining_partOfWord_taskFound() {
+        // The keyword is looked for anywhere in the description, not only as a whole word.
+        TaskList taskList = buildListOfThree();
+
+        assertEquals(1, taskList.findTasksContaining("rient").size());
+    }
+
+    @Test
+    public void findTasksContaining_matchInLaterTaskOnly_numberKept() {
+        TaskList taskList = buildListOfThree();
+
+        Map<Integer, Task> found = taskList.findTasksContaining("orientation");
+
+        // The event is the third task, so it stays number 3 rather than being renumbered to 1.
+        assertEquals(List.of(3), new ArrayList<>(found.keySet()));
+    }
+
+    @Test
+    public void findTasksContaining_keywordInDateNotDescription_taskNotFound() {
+        // Only the description is searched, so the date of a deadline cannot match.
+        TaskList taskList = buildListOfThree();
+
+        assertTrue(taskList.findTasksContaining("Dec").isEmpty());
+    }
+
+    @Test
+    public void findTasksContaining_noMatch_noneFound() {
+        TaskList taskList = buildListOfThree();
+
+        assertTrue(taskList.findTasksContaining("pizza").isEmpty());
+    }
+
+    @Test
+    public void findTasksContaining_emptyList_noneFound() {
+        assertTrue(new TaskList().findTasksContaining("book").isEmpty());
+    }
+
+    // ==================== findDeadlinesDueOn ====================
+
     @Test
     public void findDeadlinesDueOn_matchingDeadlines_foundUnderTaskNumbers() {
         TaskList taskList = buildListOfThree();

@@ -119,6 +119,31 @@ public class Ui {
     }
 
     /**
+     * Prints the tasks matching a keyword, or a notice when there are none.
+     *
+     * <p>The numbers come from the caller rather than from the position in this listing,
+     * because a task shown here is marked or deleted by its number in the full task list.
+     *
+     * @param keyword The keyword that was searched for.
+     * @param numberedTasks The matching tasks, each stored under its task number.
+     */
+    public void showMatchingTasks(String keyword, Map<Integer, Task> numberedTasks) {
+        if (numberedTasks.isEmpty()) {
+            showReply(" There are no tasks matching \"" + keyword + "\".");
+            return;
+        }
+
+        StringBuilder matchingTasks = new StringBuilder(" Here are the matching tasks in your list:");
+
+        for (Map.Entry<Integer, Task> numberedTask : numberedTasks.entrySet()) {
+            matchingTasks.append("\n")
+                    .append(formatEntry(numberedTask.getKey(), numberedTask.getValue()));
+        }
+
+        showReply(matchingTasks.toString());
+    }
+
+    /**
      * Confirms that a task was added.
      *
      * @param addedTask The task that was added.

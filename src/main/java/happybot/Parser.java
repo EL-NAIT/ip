@@ -30,6 +30,9 @@ public class Parser {
     /** Usage message for the command that lists the deadlines falling on one date. */
     private static final String DUE_USAGE = "Use: due <date>, such as due 2019-12-02.";
 
+    /** Usage message for the command that finds tasks by keyword. */
+    private static final String FIND_USAGE = "Use: find <keyword>, such as find book.";
+
     /** Text that separates a deadline description from its due date. */
     private static final String DEADLINE_MARKER = " /by ";
 
@@ -208,6 +211,22 @@ public class Parser {
         }
 
         return parseDateTime(body).toLocalDate();
+    }
+
+    /**
+     * Returns the keyword named by a find command.
+     *
+     * @param body The command text after the command word.
+     * @return The keyword to look for, without the spaces around it.
+     * @throws HappyBotException If no keyword was given.
+     */
+    public static String parseKeyword(String body) throws HappyBotException {
+        String keyword = body.trim();
+        if (keyword.isEmpty()) {
+            throw new HappyBotException(FIND_USAGE);
+        }
+
+        return keyword;
     }
 
     /**

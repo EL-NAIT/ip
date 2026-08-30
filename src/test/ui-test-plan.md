@@ -981,3 +981,85 @@ ____________________________________________________________
 Bye. Hope to see you again soon!
 ____________________________________________________________
 ```
+
+### TC-22: Find tasks by a keyword in the description
+
+**Aim:** Confirm that the find command shows every task whose description holds the keyword
+whatever its capitalization, keeps each task's number from the full list, reports when nothing
+matches, and rejects a find command with no keyword.
+
+#### Inputs
+
+```text
+todo read book
+deadline return book /by 2019-06-06
+event orientation /from 2019-12-01 /to 2019-12-03
+mark 1
+mark 2
+find book
+find BOOK
+find orientation
+find pizza
+find
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [T][ ] read book
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] return book (by: Jun 06 2019 12:00AM)
+ Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+ Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Nice! I've marked this task as done:
+   [T][X] read book
+____________________________________________________________
+____________________________________________________________
+ Nice! I've marked this task as done:
+   [D][X] return book (by: Jun 06 2019 12:00AM)
+____________________________________________________________
+____________________________________________________________
+ Here are the matching tasks in your list:
+ 1.[T][X] read book
+ 2.[D][X] return book (by: Jun 06 2019 12:00AM)
+____________________________________________________________
+____________________________________________________________
+ Here are the matching tasks in your list:
+ 1.[T][X] read book
+ 2.[D][X] return book (by: Jun 06 2019 12:00AM)
+____________________________________________________________
+____________________________________________________________
+ Here are the matching tasks in your list:
+ 3.[E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+____________________________________________________________
+____________________________________________________________
+ There are no tasks matching "pizza".
+____________________________________________________________
+____________________________________________________________
+ Oops! Use: find <keyword>, such as find book.
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```

@@ -148,6 +148,15 @@ public class HappyBot {
     }
 
     /**
+     * Shows the tasks whose description holds the specified keyword.
+     *
+     * @param keyword The keyword the user asked about.
+     */
+    private void showMatchingTasks(String keyword) {
+        ui.showMatchingTasks(keyword, tasks.findTasksContaining(keyword));
+    }
+
+    /**
      * Greets the user, then reads and carries out commands until the session ends.
      */
     public void run() {
@@ -182,6 +191,9 @@ public class HappyBot {
                     break;
                 case "due":
                     showDeadlinesDueOn(Parser.parseDueDate(body));
+                    break;
+                case "find":
+                    showMatchingTasks(Parser.parseKeyword(body));
                     break;
                 case "todo":
                     addTask(Parser.parseToDo(body));
