@@ -84,15 +84,16 @@ Apply these CS2103T Java standards to all source and test code in this repositor
 After every code update:
 
 1. Review `test/ui-test-plan.md` and update it when the change adds or alters console behaviour, commands, or expected output.
-2. Run the UI test plan with the `test-ui` skill in `.codex/skills/test-ui/`. Any agent that does not
-   discover that skill automatically should run its runner directly from the repository root:
+2. Run the UI test plan with the `test-ui` skill. In Codex, invoke it as `$test-ui`. In Claude Code, use
+   the `test-ui` skill in `.claude/skills/`. Any agent that finds neither should run the shared runner
+   directly from the repository root:
 
    ```bash
    python3 .codex/skills/test-ui/scripts/run-ui-tests.py test/ui-test-plan.md
    ```
 
-   Do not substitute an ad-hoc test script for this runner. If the build or a test case fails, stop the
-   test session immediately and report the failure.
+   All three routes run the same script. Do not substitute an ad-hoc test script for it. If the build or
+   a test case fails, stop the test session immediately and report the failure.
 
 ## Git
 
