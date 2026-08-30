@@ -30,54 +30,18 @@ Ensure that Java 25 is used when running the application or build tasks. On macO
 
 ## CS2103T coding standards
 
-Apply these CS2103T Java standards to all source and test code in this repository.
+All Java code in this repository, under `src/main/java` and `src/test/java` alike, must follow
+the SE-EDU Java coding standard at
+<https://se-education.org/guides/conventions/java/intermediate.html>. This is mandatory, not
+advisory: write new code to the standard, and bring any code you touch into line with it.
 
-### Naming
+The full rules, and the commands that check code against them mechanically, live in the
+`seedu-java-coding-standard` skill. In Claude Code, use the skill in
+`.claude/skills/seedu-java-coding-standard/`. In Codex, invoke it as
+`$seedu-java-coding-standard`. Read that skill before writing or reviewing Java code here.
 
-* Put every class in a lowercase package. For school projects, start the package name with the project
-  or group name; do not use `edu.nus.comp.*`.
-* Name classes and enums with English nouns in PascalCase. Name variables and methods in camelCase;
-  method names must be verbs. Name constants in SCREAMING_SNAKE_CASE.
-* Write all identifiers in English. Test methods may use underscores in the form
-  `featureUnderTest_scenario_expectedBehavior`; omit the scenario or expected-behavior part when it
-  does not add useful information.
-* Write abbreviations as normal words within an identifier: use `getAsXml`, not `getAsXML`.
-* Name booleans to read as booleans, preferably with prefixes such as `is`, `has`, or `was`.
-  Use a boolean setter form such as `setFound(boolean isFound)`.
-* Use plural names for collections. Use short iterator names such as `i`, `j`, and `k` only for loops.
-  Use descriptive names for variables with a broad scope and short names only for small scopes.
-* Give associated constants a common prefix.
-
-### Layout and statements
-
-* Indent with four spaces; never tabs. Keep lines at or below 120 characters (aim for 110 or fewer).
-* Use K&R braces. Put spaces around binary and ternary operators, after Java keywords, and after commas.
-  Keep a method or constructor name attached to its opening parenthesis.
-* Wrap lines to improve readability: prefer breaks after commas, before operators (including `.`, `&`,
-  and `|`), and at higher expression levels. Indent a wrapped line eight spaces more than its parent.
-* Separate logical units within a block with one blank line.
-* Follow the standard forms for method declarations, `if`/`else`, `for`, `while`, `do`/`while`,
-  `switch`, and `try`/`catch`/`finally`. Put conditionals on their own line and use braces for every
-  conditional and loop body, including a single statement.
-* Include `// Fallthrough` immediately before any intentional fallthrough in a traditional `switch`.
-* Declare variables in the smallest possible scope and initialize them at declaration where practical.
-  Keep class variables non-public, except for constants and behavior-free data classes.
-* Attach array specifiers to the type (`int[] values`), not the variable. Use explicit imports and keep
-  their ordering consistent; never use wildcard imports.
-
-### Comments and Javadocs
-
-* Write all comments in American English and indent them to match the code they describe.
-* Write descriptive header Javadocs for every public class and public method. They may be omitted for
-  getters/setters, tests, and overrides whose inherited documentation applies exactly.
-* Start a Javadoc with `/**` on its own line. Its first sentence is a short summary that begins with an
-  appropriate third-person verb, such as `Returns`, `Sends`, `Adds`, `Creates`, or `Prints`, and ends
-  with punctuation. Align later `*` lines, leave a blank line before tags, and do not leave a blank
-  line between the closing `*/` and the declaration.
-* Give each non-obvious parameter a punctuated `@param` description. Include `@return` and `@throws`
-  tags when they add useful information; omit `@return` for `void` or an otherwise obvious return.
-  Use `{@inheritDoc}` when an override needs inherited documentation with small additions.
-* A simple one-line Javadoc is acceptable for a member. Trailing comments are allowed when useful.
+Where this file and the skill appear to differ, the skill is correct: it holds the full
+standard, while this file only points to it.
 
 ## JUnit test coverage
 
@@ -126,6 +90,20 @@ After every code update:
 
 ## Git
 
-Use lightweight tags unless the user requests an annotated tag.
-When proposing or creating a commit message, include enough detail to explain the rationale for the change.
-Do not commit or push unless explicitly asked.
+Every commit and branch in this repository must follow the SE-EDU Git conventions at
+<https://se-education.org/guides/conventions/git.html>. This is mandatory, not advisory: write
+every future commit message and branch name to the standard.
+
+The full rules, and the commands that check history against them, live in the
+`seedu-git-standard` skill. In Claude Code, use the skill in `.claude/skills/seedu-git-standard/`.
+In Codex, invoke it as `$seedu-git-standard`. Read that skill before writing or proposing a
+commit message or creating a branch.
+
+Where this file and the skill appear to differ, the skill is correct: it holds the full
+standard, while this file only points to it.
+
+These project rules sit alongside the standard, which does not cover them:
+
+* Use lightweight tags unless the user requests an annotated tag.
+* Give the body enough detail to explain the rationale for the change.
+* Do not commit or push unless explicitly asked.

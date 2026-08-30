@@ -50,9 +50,9 @@ public class Task {
     }
 
     /**
-     * Returns a marker for display depending on task completion
+     * Returns a marker for display depending on task completion.
      *
-     * @return "X" for completed task, " " for uncompleted task
+     * @return "X" for a completed task, " " for an uncompleted task.
      */
     private String getStatusIcon() {
         return (isDone ? "X" : " "); // mark done task with X
