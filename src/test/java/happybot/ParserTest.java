@@ -195,16 +195,16 @@ public class ParserTest {
     public void parseDeadline_dayPastEndOfMonth_exceptionThrown() {
         // November has 30 days, so this date names no real day and must be refused rather than
         // quietly moved to 30 November.
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book /by 2019-11-31"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book /by 2019-11-31"));
 
         assertEquals(NO_SUCH_DATE_HINT, e.getMessage());
     }
 
     @Test
     public void parseDeadline_dayPastEndOfFebruary_exceptionThrown() {
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book /by 2019-02-30"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book /by 2019-02-30"));
 
         assertEquals(NO_SUCH_DATE_HINT, e.getMessage());
     }
@@ -212,8 +212,8 @@ public class ParserTest {
     @Test
     public void parseDeadline_leapDayInNonLeapYear_exceptionThrown() {
         // 2019 is not a leap year, so it has no 29 February.
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book /by 2019-02-29"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book /by 2019-02-29"));
 
         assertEquals(NO_SUCH_DATE_HINT, e.getMessage());
     }
@@ -229,8 +229,8 @@ public class ParserTest {
     @Test
     public void parseDeadline_dayPastEndOfMonthInSlashDate_exceptionThrown() {
         // The same rule applies to the other date pattern.
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book /by 31/11/2019"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book /by 31/11/2019"));
 
         assertEquals(NO_SUCH_DATE_HINT, e.getMessage());
     }
@@ -238,16 +238,16 @@ public class ParserTest {
     @Test
     public void parseDeadline_dayOutsideAnyMonth_formatHintGiven() {
         // No month has 32 days, so this is a badly written date rather than a missing one.
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book /by 2019-11-32"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book /by 2019-11-32"));
 
         assertEquals(DATE_FORMAT_HINT, e.getMessage());
     }
 
     @Test
     public void parseDeadline_monthOutsideYear_formatHintGiven() {
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book /by 2019-13-05"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book /by 2019-13-05"));
 
         assertEquals(DATE_FORMAT_HINT, e.getMessage());
     }
@@ -261,24 +261,24 @@ public class ParserTest {
 
     @Test
     public void parseDeadline_noMarker_exceptionThrown() {
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book 2019-12-02"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book 2019-12-02"));
 
         assertEquals(DEADLINE_USAGE, e.getMessage());
     }
 
     @Test
     public void parseDeadline_noDueDate_exceptionThrown() {
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("do homework /by       "));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("do homework /by       "));
 
         assertEquals(DEADLINE_USAGE, e.getMessage());
     }
 
     @Test
     public void parseDeadline_noDescription_exceptionThrown() {
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline(" /by 2019-12-02"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline(" /by 2019-12-02"));
 
         assertEquals(DEADLINE_USAGE, e.getMessage());
     }
@@ -292,8 +292,8 @@ public class ParserTest {
 
     @Test
     public void parseDeadline_unreadableDate_exceptionThrown() {
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book /by tomorrow"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book /by tomorrow"));
 
         assertEquals(DATE_FORMAT_HINT, e.getMessage());
     }
@@ -301,8 +301,8 @@ public class ParserTest {
     @Test
     public void parseDeadline_unreadableTime_exceptionThrown() {
         // 6pm has to be written as the 24-hour time 1800.
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book /by 2019-12-02 6pm"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book /by 2019-12-02 6pm"));
 
         assertEquals(DATE_FORMAT_HINT, e.getMessage());
     }
@@ -319,8 +319,8 @@ public class ParserTest {
     @Test
     public void parseDeadline_pipeInDescription_exceptionThrown() {
         // The data file separates fields with a vertical bar, so a task may not hold one.
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseDeadline("return book | CD /by 2019-12-02"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book | CD /by 2019-12-02"));
 
         assertEquals(PIPE_MESSAGE, e.getMessage());
     }
@@ -361,16 +361,16 @@ public class ParserTest {
 
     @Test
     public void parseEvent_noStartMarker_exceptionThrown() {
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseEvent("orientation /to 2019-12-03"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseEvent("orientation /to 2019-12-03"));
 
         assertEquals(EVENT_USAGE, e.getMessage());
     }
 
     @Test
     public void parseEvent_noEndMarker_exceptionThrown() {
-        HappyBotException e =
-                assertThrows(HappyBotException.class, () -> Parser.parseEvent("orientation /from 2019-12-01"));
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseEvent("orientation /from 2019-12-01"));
 
         assertEquals(EVENT_USAGE, e.getMessage());
     }
