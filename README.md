@@ -38,7 +38,7 @@ Codex was used for the following:
 3. Explaining Java and object-oriented design decisions, including where to validate command input.
 4. Implementing user input parsing with string functions.
 5. Helping format HappyBot’s console output.
-6. Creating, updating, and running console UI test cases in `test/ui-test-plan.md`.
+6. Creating, updating, and running console UI test cases in `src/test/ui-test-plan.md`.
 
 Claude Code was used for the following:
 
@@ -47,7 +47,7 @@ Claude Code was used for the following:
 3. Making each save all-or-nothing by writing to a temporary file and renaming it over the data file.
 4. Refactoring the duplicated task-adding code into an `addTask` method.
 5. Explaining the Java library behavior used above, including `Files.write`, `Path.of`, `Path.resolveSibling`, `Scanner.hasNextLine`.
-6. Updating and running the console UI test cases in `test/ui-test-plan.md`, including making each case start from a clean data file and adding cases TC-12 and TC-13.
+6. Updating and running the console UI test cases in `src/test/ui-test-plan.md`, including making each case start from a clean data file and adding cases TC-12 and TC-13.
 
 Claude Code was used for the Level 8 date and time increment:
 
@@ -57,7 +57,7 @@ Claude Code was used for the Level 8 date and time increment:
 4. Rejecting an event whose start is not before its end.
 5. Adding the `due <date>` command
 6. Storing dates in the data file in ISO form so that times survive saving and loading, and skipping saved lines whose dates cannot be read.
-7. Updating and running the console UI test cases in `test/ui-test-plan.md`, adding cases TC-14 to TC-19.
+7. Updating and running the console UI test cases in `src/test/ui-test-plan.md`, adding cases TC-14 to TC-19.
 
 Claude Code was used for the A-MoreOOP increment: turning `HappyBot` into an object and extracting the `Ui`, `Parser`, 
 and `TaskList` classes out of it in five small steps, running the console UI test cases after each one.

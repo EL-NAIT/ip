@@ -5,17 +5,17 @@ description: Run planned console UI tests and compare each session's output with
 
 # Test UI
 
-Run the console UI test cases defined in `test/ui-test-plan.md`. Each case
+Run the console UI test cases defined in `../../../src/test/ui-test-plan.md`. Each case
 contains its aim, console inputs, and complete expected output.
 
 ## Run tests
 
-1. Update `test/ui-test-plan.md` before testing so its build command, run
+1. Update `../../../src/test/ui-test-plan.md` before testing so its build command, run
    command, and test cases describe the program's current interface.
 2. Run the project-local test runner from the repository root:
 
    ```bash
-   python3 .codex/skills/test-ui/scripts/run-ui-tests.py test/ui-test-plan.md
+   python3 .codex/skills/test-ui/scripts/run-ui-tests.py src/test/ui-test-plan.md
    ```
 
 3. Read the printed transcript for every passing case. Each transcript records

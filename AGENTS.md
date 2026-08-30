@@ -79,17 +79,46 @@ Apply these CS2103T Java standards to all source and test code in this repositor
   Use `{@inheritDoc}` when an override needs inherited documentation with small additions.
 * A simple one-line Javadoc is acceptable for a member. Trailing comments are allowed when useful.
 
+## JUnit test coverage
+
+Aim to cover the top half of the codebase by value with JUnit tests: roughly the 50% of methods
+carrying the most complex, core, or otherwise critical logic. Parsing, task-list operations, and
+reading and writing the data file are in that half. Trivial accessors, one-line overrides, and
+methods that only print to the console are not, and are left to the UI test plan instead.
+
+After every code update:
+
+1. Add or update the JUnit tests so the target still holds. A new method in that top half needs
+   tests of its own; a method whose behaviour changed needs its existing tests changed to assert
+   the new behaviour, rather than deleted.
+2. Cover the reasonable cases for each method under test, not just one: the ordinary result, the
+   boundaries, and each way the method is meant to fail.
+3. Run the tests from the repository root:
+
+   ```bash
+   ./gradlew test
+   ```
+
+   If a test fails, stop and report the failure rather than adjusting the test to match the new
+   behaviour without saying so.
+
+Follow the Gradle and JUnit conventions for placement and naming: a test class lives under
+`src/test/java` in the same package as the class it tests and is named after it, such as
+`happybot.Parser` being tested by `happybot.ParserTest` in
+`src/test/java/happybot/ParserTest.java`. Name a test method for what it checks, using
+`featureUnderTest_testScenario_expectedBehavior()` when a plain name would not be clear enough.
+
 ## UI test verification
 
 After every code update:
 
-1. Review `test/ui-test-plan.md` and update it when the change adds or alters console behaviour, commands, or expected output.
+1. Review `src/test/ui-test-plan.md` and update it when the change adds or alters console behaviour, commands, or expected output.
 2. Run the UI test plan with the `test-ui` skill. In Codex, invoke it as `$test-ui`. In Claude Code, use
    the `test-ui` skill in `.claude/skills/`. Any agent that finds neither should run the shared runner
    directly from the repository root:
 
    ```bash
-   python3 .codex/skills/test-ui/scripts/run-ui-tests.py test/ui-test-plan.md
+   python3 .codex/skills/test-ui/scripts/run-ui-tests.py src/test/ui-test-plan.md
    ```
 
    All three routes run the same script. Do not substitute an ad-hoc test script for it. If the build or
