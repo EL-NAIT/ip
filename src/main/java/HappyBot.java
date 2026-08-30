@@ -1,17 +1,14 @@
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Runs the HappyBot chatbot application.
  *
  * <p>A HappyBot object owns the task list, the storage that saves it, and the user interface
- * that reads commands and prints replies. Ui builds the console text and Parser reads the
- * typed command, which leaves this class with the task list and what each command does to it.
+ * that reads commands and prints replies. Ui builds the console text, Parser reads the typed
+ * command and TaskList keeps the tasks, which leaves this class to decide what each command
+ * asks of the three of them.
  */
 public class HappyBot {
     private static final Path DATA_FILE_PATH = Path.of("data", "HappyBot.txt");
@@ -23,7 +20,7 @@ public class HappyBot {
     private final Storage storage;
 
     /** Tasks held by this HappyBot for the length of the session. */
-    private List<Task> tasks;
+    private TaskList tasks;
 
     /**
      * Creates a HappyBot that keeps its tasks in the specified data file.
@@ -36,7 +33,7 @@ public class HappyBot {
     public HappyBot(Path filePath) {
         this.ui = new Ui();
         this.storage = new Storage(filePath);
-        this.tasks = new ArrayList<>();
+        this.tasks = new TaskList();
     }
 
     /**
@@ -47,7 +44,7 @@ public class HappyBot {
      */
     private void loadSavedTasks() {
         try {
-            tasks = storage.loadTasks();
+            tasks = new TaskList(storage.loadTasks());
             if (storage.getSkippedLineCount() > 0) {
                 ui.showSkippedLinesNotice(storage.getSkippedLineCount());
             }
@@ -64,25 +61,10 @@ public class HappyBot {
      */
     private void saveTasks() {
         try {
-            storage.saveTasks(tasks);
+            storage.saveTasks(tasks.getTasks());
         } catch (IOException e) {
             ui.showSavingError(storage.getFilePath());
         }
-    }
-
-    /**
-     * Returns the task that a command's task number names.
-     *
-     * @param taskNumber The number typed by the user, counted from one.
-     * @return The task holding that number.
-     * @throws HappyBotException If no task holds that number.
-     */
-    private Task getTask(int taskNumber) throws HappyBotException {
-        if (taskNumber < 1 || taskNumber > tasks.size()) {
-            throw new HappyBotException("Please choose a valid task number.");
-        }
-
-        return tasks.get(taskNumber - 1);
     }
 
     /**
@@ -107,7 +89,7 @@ public class HappyBot {
             throw new HappyBotException("There are no tasks to mark.");
         }
 
-        Task taskToMark = getTask(Parser.parseTaskNumber(body));
+        Task taskToMark = tasks.get(Parser.parseTaskNumber(body));
         taskToMark.markAsDone();
         saveTasks();
         ui.showMarkedTask(taskToMark);
@@ -124,7 +106,7 @@ public class HappyBot {
             throw new HappyBotException("There are no tasks to unmark.");
         }
 
-        Task taskToUnmark = getTask(Parser.parseTaskNumber(body));
+        Task taskToUnmark = tasks.get(Parser.parseTaskNumber(body));
         taskToUnmark.unmarkAsDone();
         saveTasks();
         ui.showUnmarkedTask(taskToUnmark);
@@ -141,10 +123,7 @@ public class HappyBot {
             throw new HappyBotException("There are no tasks to delete.");
         }
 
-        int taskNumber = Parser.parseTaskNumber(body);
-        Task taskToDelete = getTask(taskNumber);
-        // Removing by position avoids List.remove(Object), which would search for an equal task.
-        tasks.remove(taskNumber - 1);
+        Task taskToDelete = tasks.delete(Parser.parseTaskNumber(body));
         saveTasks();
         ui.showDeletedTask(taskToDelete, tasks.size());
     }
@@ -160,18 +139,7 @@ public class HappyBot {
     private void showDeadlinesDueOn(LocalDate date) {
         // Reusing the task display keeps one source of truth for how a date is written.
         String displayedDate = DatedTask.formatDate(date);
-        // A LinkedHashMap keeps the deadlines in list order while remembering each task number.
-        Map<Integer, Task> matchingTasks = new LinkedHashMap<>();
-
-        for (int i = 0; i < tasks.size(); i++) {
-            // A todo and an event have no due date, so only a deadline can match.
-            if (tasks.get(i) instanceof Deadline deadline
-                    && deadline.getEndDate().toLocalDate().equals(date)) {
-                matchingTasks.put(i + 1, deadline);
-            }
-        }
-
-        ui.showDeadlinesDueOn(displayedDate, matchingTasks);
+        ui.showDeadlinesDueOn(displayedDate, tasks.findDeadlinesDueOn(date));
     }
 
     /**
@@ -196,7 +164,7 @@ public class HappyBot {
                     isRunning = false;
                     break;
                 case "list":
-                    ui.showTaskList(tasks);
+                    ui.showTaskList(tasks.getTasks());
                     break;
                 case "mark":
                     markTask(body);
