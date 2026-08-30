@@ -1,0 +1,262 @@
+package happybot;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import happybot.task.Deadline;
+import happybot.task.Event;
+import happybot.task.Task;
+import happybot.task.ToDo;
+
+public class StorageTest {
+    // JUnit creates this directory before each test and deletes it afterwards, so no test
+    // touches the real data file or is affected by what an earlier test wrote.
+    @TempDir
+    private Path temporaryDirectory;
+
+    private Path dataFile() {
+        return temporaryDirectory.resolve("HappyBot.txt");
+    }
+
+    // Writes the specified lines straight into the data file, standing in for a file saved
+    // by an earlier run or edited by hand.
+    private void writeDataFile(String... lines) throws IOException {
+        Files.write(dataFile(), List.of(lines), StandardCharsets.UTF_8);
+    }
+
+    // ==================== saveTasks then loadTasks ====================
+
+    @Test
+    public void saveThenLoad_oneOfEachTaskType_tasksRestored() throws IOException {
+        Storage storage = new Storage(dataFile());
+        Deadline deadline = new Deadline("return book", LocalDateTime.of(2019, 12, 2, 18, 0));
+        Event event = new Event(LocalDateTime.of(2019, 12, 1, 9, 0),
+                LocalDateTime.of(2019, 12, 3, 17, 0), "orientation");
+        storage.saveTasks(List.of(new ToDo("read book"), deadline, event));
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        assertEquals(3, loadedTasks.size());
+        assertInstanceOf(ToDo.class, loadedTasks.get(0));
+        assertEquals("read book", loadedTasks.get(0).getDescription());
+
+        Deadline loadedDeadline = assertInstanceOf(Deadline.class, loadedTasks.get(1));
+        assertEquals("return book", loadedDeadline.getDescription());
+        assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), loadedDeadline.getEndDate());
+
+        Event loadedEvent = assertInstanceOf(Event.class, loadedTasks.get(2));
+        assertEquals(LocalDateTime.of(2019, 12, 1, 9, 0), loadedEvent.getStartTime());
+        assertEquals(LocalDateTime.of(2019, 12, 3, 17, 0), loadedEvent.getEndTime());
+    }
+
+    @Test
+    public void saveThenLoad_completedTask_stillCompleted() throws IOException {
+        Storage storage = new Storage(dataFile());
+        Task doneTask = new ToDo("read book");
+        doneTask.markAsDone();
+        storage.saveTasks(List.of(doneTask, new ToDo("return book")));
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        assertTrue(loadedTasks.get(0).isDone());
+        assertFalse(loadedTasks.get(1).isDone());
+    }
+
+    @Test
+    public void saveTasks_calledTwice_previousContentsReplaced() throws IOException {
+        Storage storage = new Storage(dataFile());
+        storage.saveTasks(List.of(new ToDo("read book"), new ToDo("return book")));
+
+        storage.saveTasks(List.of(new ToDo("pay fees")));
+
+        List<Task> loadedTasks = storage.loadTasks();
+        assertEquals(1, loadedTasks.size());
+        assertEquals("pay fees", loadedTasks.get(0).getDescription());
+    }
+
+    @Test
+    public void saveTasks_missingParentDirectory_directoryCreated() throws IOException {
+        Path nestedFile = temporaryDirectory.resolve("data").resolve("HappyBot.txt");
+        Storage storage = new Storage(nestedFile);
+
+        storage.saveTasks(List.of(new ToDo("read book")));
+
+        assertTrue(Files.exists(nestedFile));
+    }
+
+    @Test
+    public void saveTasks_finished_noTemporaryFileLeftBehind() throws IOException {
+        // The save writes a temporary file first, which must not survive a successful save.
+        Storage storage = new Storage(dataFile());
+
+        storage.saveTasks(List.of(new ToDo("read book")));
+
+        assertFalse(Files.exists(temporaryDirectory.resolve("HappyBot.txt.tmp")));
+    }
+
+    @Test
+    public void saveTasks_noTasks_fileIsEmpty() throws IOException {
+        Storage storage = new Storage(dataFile());
+
+        storage.saveTasks(List.of());
+
+        assertEquals(List.of(), Files.readAllLines(dataFile(), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void saveTasks_unsupportedTaskType_exceptionThrown() {
+        // Only the three task types HappyBot creates have a storage format.
+        Storage storage = new Storage(dataFile());
+        List<Task> tasks = List.of(new Task("a plain task"));
+
+        assertThrows(IllegalArgumentException.class, () -> storage.saveTasks(tasks));
+    }
+
+    // ==================== loadTasks on files written elsewhere ====================
+
+    @Test
+    public void loadTasks_fileDoesNotExist_noTasksAndNoError() throws IOException {
+        Storage storage = new Storage(dataFile());
+
+        assertTrue(storage.loadTasks().isEmpty());
+        assertEquals(0, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_pathIsDirectory_exceptionThrown() throws IOException {
+        Path directoryPath = temporaryDirectory.resolve("HappyBot.txt");
+        Files.createDirectory(directoryPath);
+        Storage storage = new Storage(directoryPath);
+
+        assertThrows(IOException.class, storage::loadTasks);
+    }
+
+    @Test
+    public void loadTasks_blankLines_linesIgnoredAndNotCounted() throws IOException {
+        writeDataFile("T | 0 | read book", "", "   ", "T | 1 | return book");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        assertEquals(2, loadedTasks.size());
+        assertEquals(0, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_unknownTaskType_lineSkippedAndCounted() throws IOException {
+        writeDataFile("T | 0 | read book", "X | 0 | mystery task");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        // The readable tasks are kept rather than the whole file being abandoned.
+        assertEquals(1, loadedTasks.size());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_wrongFieldCount_lineSkippedAndCounted() throws IOException {
+        // A deadline needs four fields, so one carrying a todo's three cannot be read.
+        writeDataFile("D | 0 | return book", "T | 0 | read book");
+        Storage storage = new Storage(dataFile());
+
+        assertEquals(1, storage.loadTasks().size());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_tooFewFields_lineSkippedAndCounted() throws IOException {
+        writeDataFile("T | 0");
+        Storage storage = new Storage(dataFile());
+
+        assertTrue(storage.loadTasks().isEmpty());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_blankField_lineSkippedAndCounted() throws IOException {
+        // The description is empty, which no saved task should have.
+        writeDataFile("T | 0 |  ");
+        Storage storage = new Storage(dataFile());
+
+        assertTrue(storage.loadTasks().isEmpty());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_unknownCompletionStatus_lineSkippedAndCounted() throws IOException {
+        writeDataFile("T | yes | read book");
+        Storage storage = new Storage(dataFile());
+
+        assertTrue(storage.loadTasks().isEmpty());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_unreadableDate_lineSkippedAndCounted() throws IOException {
+        writeDataFile("D | 0 | return book | 2 Dec 2019");
+        Storage storage = new Storage(dataFile());
+
+        assertTrue(storage.loadTasks().isEmpty());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_severalUnreadableLines_allCounted() throws IOException {
+        writeDataFile("X | 0 | mystery", "T | 0", "T | 0 | read book", "D | 0 | return book | soon");
+        Storage storage = new Storage(dataFile());
+
+        assertEquals(1, storage.loadTasks().size());
+        assertEquals(3, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_calledAgain_skippedCountReset() throws IOException {
+        writeDataFile("X | 0 | mystery");
+        Storage storage = new Storage(dataFile());
+        storage.loadTasks();
+
+        writeDataFile("T | 0 | read book");
+        storage.loadTasks();
+
+        // The count describes the most recent load, not every load so far.
+        assertEquals(0, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_readableLinesAfterBadLine_stillLoaded() throws IOException {
+        writeDataFile("X | 0 | mystery", "T | 0 | read book", "T | 1 | return book");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        assertEquals(2, loadedTasks.size());
+        assertEquals("read book", loadedTasks.get(0).getDescription());
+        assertTrue(loadedTasks.get(1).isDone());
+    }
+
+    @Test
+    public void loadTasks_loadedList_canBeModified() throws IOException {
+        // HappyBot hands the loaded list to a TaskList that keeps adding to it.
+        writeDataFile("T | 0 | read book");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+        loadedTasks.add(new ToDo("return book"));
+
+        assertEquals(2, loadedTasks.size());
+    }
+}

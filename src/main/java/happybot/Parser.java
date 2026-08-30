@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 
 import happybot.task.Deadline;
 import happybot.task.Event;
@@ -38,12 +39,34 @@ public class Parser {
     /** Text that separates an event start date from its end date. */
     private static final String EVENT_END_MARKER = " /to ";
 
-    /** Date patterns accepted from the user. The brackets mark each one as optional. */
+    /**
+     * Date patterns accepted from the user. The brackets mark each one as optional.
+     *
+     * <p>Strict resolving rejects a date that names no real day, such as 2019-11-31, instead of
+     * quietly moving it back to the last day of the month. Strict resolving needs the year
+     * written as uuuu rather than yyyy, because yyyy is a year within an era and an era is
+     * never typed.
+     */
     private static final DateTimeFormatter DATE_FORMAT =
-            DateTimeFormatter.ofPattern("[yyyy-MM-dd][d/M/yyyy]");
+            DateTimeFormatter.ofPattern("[uuuu-MM-dd][d/M/uuuu]")
+                    .withResolverStyle(ResolverStyle.STRICT);
+
+    /**
+     * The same patterns resolved leniently, used only to tell the two kinds of bad date apart.
+     *
+     * <p>A date this reads but DATE_FORMAT rejects was written correctly and simply names no
+     * real day, which earns a clearer message than the one about the format.
+     */
+    private static final DateTimeFormatter LENIENT_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("[uuuu-MM-dd][d/M/uuuu]");
 
     /** Pattern accepted for the optional 24-hour time that may follow a date. */
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HHmm");
+
+    /** Message shown when a date is written correctly but names no day on the calendar. */
+    private static final String NO_SUCH_DATE_HINT =
+            "There is no such date on the calendar. Please enter a valid date, checking the "
+                    + "number of days the month has.";
 
     /** Message shown when a date and time cannot be read. */
     private static final String DATE_FORMAT_HINT =
@@ -99,11 +122,13 @@ public class Parser {
     public static ToDo parseToDo(String body) throws HappyBotException {
         checkTaskText(body);
 
-        if (body.isBlank()) {
+        // Trimming keeps stray spaces out of the description that is stored and shown.
+        String description = body.trim();
+        if (description.isEmpty()) {
             throw new HappyBotException("The description of a todo cannot be empty.");
         }
 
-        return new ToDo(body);
+        return new ToDo(description);
     }
 
     /**
@@ -121,7 +146,7 @@ public class Parser {
             throw new HappyBotException(DEADLINE_USAGE);
         }
 
-        String description = body.substring(0, markerIndex);
+        String description = body.substring(0, markerIndex).trim();
         String dueDateText = body.substring(markerIndex + DEADLINE_MARKER.length());
         if (description.isBlank() || dueDateText.isBlank()) {
             throw new HappyBotException(DEADLINE_USAGE);
@@ -150,7 +175,7 @@ public class Parser {
             throw new HappyBotException(EVENT_USAGE);
         }
 
-        String description = body.substring(0, startMarkerIndex);
+        String description = body.substring(0, startMarkerIndex).trim();
         String startText =
                 body.substring(startMarkerIndex + EVENT_START_MARKER.length(), endMarkerIndex);
         String endText = body.substring(endMarkerIndex + EVENT_END_MARKER.length());
@@ -199,16 +224,41 @@ public class Parser {
         // Collapsing runs of spaces lets the date and any time split cleanly in two.
         String[] dateTimeParts = dateTimeText.trim().replaceAll("\\s+", " ").split(" ", 2);
 
+        // The date and the time are read separately so that each failure earns its own message.
+        LocalDate date;
         try {
-            LocalDate date = LocalDate.parse(dateTimeParts[0], DATE_FORMAT);
-            LocalTime time = dateTimeParts.length == 2
-                    ? LocalTime.parse(dateTimeParts[1], TIME_FORMAT)
-                    : LocalTime.MIDNIGHT;
-
-            return LocalDateTime.of(date, time);
+            date = LocalDate.parse(dateTimeParts[0], DATE_FORMAT);
         } catch (DateTimeParseException e) {
             // The hint replaces the exception's own message, which names an index in the text.
+            throw new HappyBotException(describeBadDate(dateTimeParts[0]));
+        }
+
+        if (dateTimeParts.length == 1) {
+            return LocalDateTime.of(date, LocalTime.MIDNIGHT);
+        }
+
+        try {
+            return LocalDateTime.of(date, LocalTime.parse(dateTimeParts[1], TIME_FORMAT));
+        } catch (DateTimeParseException e) {
             throw new HappyBotException(DATE_FORMAT_HINT);
+        }
+    }
+
+    /**
+     * Returns the message explaining why a date could not be used.
+     *
+     * <p>A date the lenient format reads is written correctly and only names a day the month
+     * does not have, so it earns the clearer message of the two.
+     *
+     * @param dateText The date part of what the user typed, without any time after it.
+     * @return The message to show the user.
+     */
+    private static String describeBadDate(String dateText) {
+        try {
+            LocalDate.parse(dateText, LENIENT_DATE_FORMAT);
+            return NO_SUCH_DATE_HINT;
+        } catch (DateTimeParseException e) {
+            return DATE_FORMAT_HINT;
         }
     }
 

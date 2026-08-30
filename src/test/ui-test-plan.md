@@ -2,7 +2,7 @@
 
 ## Runner configuration
 
-**Working directory:** `.`
+**Working directory:** `..`
 
 ### Build command
 
@@ -18,7 +18,7 @@ source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >
 
 ### Test isolation
 
-HappyBot loads `data/HappyBot.txt` on startup, so tasks saved by one test case
+HappyBot loads `../../data/HappyBot.txt` on startup, so tasks saved by one test case
 would otherwise be visible to the next one. The run command deletes that file
 before each case so that every case starts from an empty task list.
 
@@ -27,7 +27,7 @@ before each case so that every case starts from an empty task list.
 Deleting the data file also puts the two startup notices out of reach, because
 both need saved data that is already there and already broken. The runner has
 one run command for every case and no per-case setup, so these two are checked
-by hand from a scratch directory holding a `data/HappyBot.txt`:
+by hand from a scratch directory holding a `../../data/HappyBot.txt`:
 
 - a file with unreadable lines prints
   `Heads up! I skipped <n> unreadable line(s) in your saved data.`
@@ -867,6 +867,115 @@ ____________________________________________________________
  1.[D][ ] return book (by: Dec 02 2019 6:00PM)
  2.[D][ ] pay fees (by: Dec 02 2019 6:00PM)
  3.[E][ ] orientation (from: Dec 01 2019 9:00AM to: Dec 03 2019 5:00PM)
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-20: Trim spaces around a task description
+
+**Aim:** Confirm that HappyBot removes the spaces before and after a task description, so that
+the stored and displayed description holds neither.
+
+#### Inputs
+
+```text
+todo    read book
+deadline return book    /by 2019-12-02
+event   orientation    /from 2019-12-01 /to 2019-12-03
+list
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [T][ ] read book
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] return book (by: Dec 02 2019 12:00AM)
+ Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+ Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Here are the tasks in your list:
+ 1.[T][ ] read book
+ 2.[D][ ] return book (by: Dec 02 2019 12:00AM)
+ 3.[E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-21: Reject a date that names no day on the calendar
+
+**Aim:** Confirm that HappyBot refuses a correctly written date that no month holds, such as
+31 November or 29 February in a year that is not a leap year, instead of moving it to the last
+day of the month, and that it still accepts a real leap day.
+
+#### Inputs
+
+```text
+deadline return book /by 2019-11-31
+deadline pay fees /by 2019-02-30
+deadline submit form /by 31/11/2019
+due 2019-02-29
+deadline leap task /by 2020-02-29
+list
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Oops! There is no such date on the calendar. Please enter a valid date, checking the number of days the month has.
+____________________________________________________________
+____________________________________________________________
+ Oops! There is no such date on the calendar. Please enter a valid date, checking the number of days the month has.
+____________________________________________________________
+____________________________________________________________
+ Oops! There is no such date on the calendar. Please enter a valid date, checking the number of days the month has.
+____________________________________________________________
+____________________________________________________________
+ Oops! There is no such date on the calendar. Please enter a valid date, checking the number of days the month has.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] leap task (by: Feb 29 2020 12:00AM)
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Here are the tasks in your list:
+ 1.[D][ ] leap task (by: Feb 29 2020 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
