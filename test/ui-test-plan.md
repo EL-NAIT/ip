@@ -7,7 +7,7 @@
 ### Build command
 
 ```sh
-source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes src/main/java/HappyBot.java src/main/java/HappyBotException.java src/main/java/Storage.java src/main/java/Task.java src/main/java/ToDo.java src/main/java/Deadline.java src/main/java/Event.java src/main/java/DatedTask.java
+source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >/dev/null && rm -rf /private/tmp/happybot-ui-test-classes && mkdir -p /private/tmp/happybot-ui-test-classes && javac -d /private/tmp/happybot-ui-test-classes src/main/java/*.java
 ```
 
 ### Run command
@@ -21,6 +21,22 @@ source /Users/tianle/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.3.fx-zulu >
 HappyBot loads `data/HappyBot.txt` on startup, so tasks saved by one test case
 would otherwise be visible to the next one. The run command deletes that file
 before each case so that every case starts from an empty task list.
+
+### Checks that stay manual
+
+Deleting the data file also puts the two startup notices out of reach, because
+both need saved data that is already there and already broken. The runner has
+one run command for every case and no per-case setup, so these two are checked
+by hand from a scratch directory holding a `data/HappyBot.txt`:
+
+- a file with unreadable lines prints
+  `Heads up! I skipped <n> unreadable line(s) in your saved data.`
+- a file that cannot be read at all prints
+  `Heads up! I could not read data/HappyBot.txt, so I am starting with an empty
+  task list.`
+
+Both notices appear between the welcome message and the first command, inside
+their own pair of divider lines.
 
 ## Test cases
 

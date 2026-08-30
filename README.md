@@ -59,6 +59,9 @@ Claude Code was used for the Level 8 date and time increment:
 6. Storing dates in the data file in ISO form so that times survive saving and loading, and skipping saved lines whose dates cannot be read.
 7. Updating and running the console UI test cases in `test/ui-test-plan.md`, adding cases TC-14 to TC-19.
 
+Claude Code was used for the A-MoreOOP increment: turning `HappyBot` into an object and extracting the `Ui`, `Parser`, 
+and `TaskList` classes out of it in five small steps, running the console UI test cases after each one.
+
 Several designs suggested by Claude Code were rejected in favour of simpler code that relies on the Java standard library.
 
 All AI-generated or AI-suggested code and test cases were personally reviewed before use.
