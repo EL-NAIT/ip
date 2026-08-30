@@ -1,3 +1,5 @@
+package happybot;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -7,6 +9,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+
+import happybot.task.Deadline;
+import happybot.task.Event;
+import happybot.task.Task;
+import happybot.task.ToDo;
 
 /**
  * Saves HappyBot tasks to a text file and loads them back on startup.

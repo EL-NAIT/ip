@@ -1,9 +1,14 @@
+package happybot;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import happybot.task.Deadline;
+import happybot.task.Task;
 
 /**
  * Holds the tasks of one HappyBot session and the operations that change them.

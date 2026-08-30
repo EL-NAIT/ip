@@ -1,6 +1,11 @@
+package happybot;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
+
+import happybot.task.DatedTask;
+import happybot.task.Task;
 
 /**
  * Runs the HappyBot chatbot application.
