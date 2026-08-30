@@ -21,6 +21,8 @@ public class ParserTest {
 
     private static final String DUE_USAGE = "Use: due <date>, such as due 2019-12-02.";
 
+    private static final String FIND_USAGE = "Use: find <keyword>, such as find book.";
+
     private static final String DATE_FORMAT_HINT =
             "Please write dates as yyyy-MM-dd or d/M/yyyy, with an optional 24-hour time that "
                     + "defaults to 0000, such as 2019-12-02 1800.";
@@ -439,6 +441,38 @@ public class ParserTest {
                 () -> Parser.parseEvent("talk | panel /from 2019-12-01 /to 2019-12-03"));
 
         assertEquals(PIPE_MESSAGE, e.getMessage());
+    }
+
+    // ==================== parseKeyword ====================
+
+    @Test
+    public void parseKeyword_word_keywordReturned() throws HappyBotException {
+        assertEquals("book", Parser.parseKeyword("book"));
+    }
+
+    @Test
+    public void parseKeyword_spacesAroundKeyword_keywordTrimmed() throws HappyBotException {
+        assertEquals("book", Parser.parseKeyword("   book   "));
+    }
+
+    @Test
+    public void parseKeyword_severalWords_wholeTextReturned() throws HappyBotException {
+        // The whole text is searched for, so a keyword may hold a space.
+        assertEquals("read book", Parser.parseKeyword("read book"));
+    }
+
+    @Test
+    public void parseKeyword_emptyBody_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class, () -> Parser.parseKeyword(""));
+
+        assertEquals(FIND_USAGE, e.getMessage());
+    }
+
+    @Test
+    public void parseKeyword_spacesOnly_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class, () -> Parser.parseKeyword("    "));
+
+        assertEquals(FIND_USAGE, e.getMessage());
     }
 
     // ==================== parseDueDate ====================
