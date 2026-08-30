@@ -62,6 +62,10 @@ Claude Code was used for the Level 8 date and time increment:
 Claude Code was used for the A-MoreOOP increment: turning `HappyBot` into an object and extracting the `Ui`, `Parser`, 
 and `TaskList` classes out of it in five small steps, running the console UI test cases after each one.
 
+Claude Code was used for the A-Packages increment: proposing the `happybot` and
+`happybot.task` package structure with the alternatives weighed, moving the classes
+into it, and updating the UI test plan runner commands and the README setup path.
+
 Several designs suggested by Claude Code were rejected in favour of simpler code that relies on the Java standard library.
 
 All AI-generated or AI-suggested code and test cases were personally reviewed before use.
