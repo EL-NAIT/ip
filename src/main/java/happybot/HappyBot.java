@@ -91,7 +91,7 @@ public class HappyBot {
      */
     private String addTask(Task taskToAdd) {
         tasks.add(taskToAdd);
-        return saveTasks() + ui.formatAddedTask(taskToAdd, tasks.size());
+        return saveTasks() + ui.formatAddedTask(taskToAdd, tasks.getSize());
     }
 
     /**
@@ -105,7 +105,7 @@ public class HappyBot {
             throw new HappyBotException("There are no tasks to mark.");
         }
 
-        Task taskToMark = tasks.get(Parser.parseTaskNumber(body));
+        Task taskToMark = tasks.getTask(Parser.parseTaskNumber(body));
         taskToMark.markAsDone();
         return saveTasks() + ui.formatMarkedTask(taskToMark);
     }
@@ -121,7 +121,7 @@ public class HappyBot {
             throw new HappyBotException("There are no tasks to unmark.");
         }
 
-        Task taskToUnmark = tasks.get(Parser.parseTaskNumber(body));
+        Task taskToUnmark = tasks.getTask(Parser.parseTaskNumber(body));
         taskToUnmark.unmarkAsDone();
         return saveTasks() + ui.formatUnmarkedTask(taskToUnmark);
     }
@@ -138,7 +138,7 @@ public class HappyBot {
         }
 
         Task taskToDelete = tasks.delete(Parser.parseTaskNumber(body));
-        return saveTasks() + ui.formatDeletedTask(taskToDelete, tasks.size());
+        return saveTasks() + ui.formatDeletedTask(taskToDelete, tasks.getSize());
     }
 
     /**
@@ -189,17 +189,17 @@ public class HappyBot {
 
         try {
             return switch (command) {
-            case "bye" -> ui.getGoodbyeMessage();
-            case "list" -> ui.formatTaskList(tasks.getTasks());
-            case "mark" -> markTask(body);
-            case "unmark" -> unmarkTask(body);
-            case "delete" -> deleteTask(body);
-            case "due" -> getDeadlinesDueOn(Parser.parseDueDate(body));
-            case "find" -> getMatchingTasks(Parser.parseKeyword(body));
-            case "todo" -> addTask(Parser.parseToDo(body));
-            case "deadline" -> addTask(Parser.parseDeadline(body));
-            case "event" -> addTask(Parser.parseEvent(body));
-            default -> throw new HappyBotException("I don't know what that means :-(");
+                case "bye" -> ui.getGoodbyeMessage();
+                case "list" -> ui.formatTaskList(tasks.getTasks());
+                case "mark" -> markTask(body);
+                case "unmark" -> unmarkTask(body);
+                case "delete" -> deleteTask(body);
+                case "due" -> getDeadlinesDueOn(Parser.parseDueDate(body));
+                case "find" -> getMatchingTasks(Parser.parseKeyword(body));
+                case "todo" -> addTask(Parser.parseToDo(body));
+                case "deadline" -> addTask(Parser.parseDeadline(body));
+                case "event" -> addTask(Parser.parseEvent(body));
+                default -> throw new HappyBotException("I don't know what that means :-(");
             };
         } catch (HappyBotException e) {
             return ui.formatError(e.getMessage());

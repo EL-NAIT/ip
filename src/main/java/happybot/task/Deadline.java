@@ -6,30 +6,30 @@ import java.time.LocalDateTime;
  * Represents a task with a due date managed by HappyBot.
  */
 public class Deadline extends DatedTask {
-    protected LocalDateTime endDate;
+    protected LocalDateTime dueDateTime;
 
     /**
      * Creates a deadline task with the specified description and due date.
      *
      * @param description The deadline description.
-     * @param endDate The deadline due date.
+     * @param dueDateTime The deadline due date and time.
      */
-    public Deadline(String description, LocalDateTime endDate) {
+    public Deadline(String description, LocalDateTime dueDateTime) {
         super(description);
-        this.endDate = endDate;
+        this.dueDateTime = dueDateTime;
     }
 
     /**
-     * Returns the deadline due date.
+     * Returns the deadline due date and time.
      *
-     * @return The deadline due date.
+     * @return The deadline due date and time.
      */
-    public LocalDateTime getEndDate() {
-        return endDate;
+    public LocalDateTime getDueDateTime() {
+        return dueDateTime;
     }
 
     @Override
     public String toString() {
-        return "[D]" + super.toString() + " (by: " + formatDate(this.endDate) + ")";
+        return "[D]" + super.toString() + " (by: " + formatDate(this.dueDateTime) + ")";
     }
 }

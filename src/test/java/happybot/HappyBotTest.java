@@ -40,6 +40,15 @@ public class HappyBotTest {
     }
 
     @Test
+    public void getResponse_byeCommand_goodbyeReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        String response = happyBot.getResponse("bye");
+
+        assertEquals("Bye. Hope to see you again soon!", response);
+    }
+
+    @Test
     public void constructor_savedTask_taskLoaded(@TempDir Path tempDir) {
         Path dataFile = tempDir.resolve("tasks.txt");
         HappyBot firstSession = new HappyBot(dataFile);

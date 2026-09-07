@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import happybot.task.Deadline;
 import happybot.task.Task;
 
 /**
@@ -118,7 +119,7 @@ public class Ui {
      * @param displayedDate The date the deadlines fall on, already written for display.
      * @param numberedDeadlines The deadlines to show, each stored under its task number.
      */
-    String formatDeadlinesDueOn(String displayedDate, Map<Integer, Task> numberedDeadlines) {
+    String formatDeadlinesDueOn(String displayedDate, Map<Integer, Deadline> numberedDeadlines) {
         if (numberedDeadlines.isEmpty()) {
             return " There are no deadlines due on " + displayedDate + ".";
         }
@@ -126,7 +127,7 @@ public class Ui {
         StringBuilder matchingTasks =
                 new StringBuilder(" Here are the deadlines due on " + displayedDate + ":");
 
-        for (Map.Entry<Integer, Task> numberedDeadline : numberedDeadlines.entrySet()) {
+        for (Map.Entry<Integer, Deadline> numberedDeadline : numberedDeadlines.entrySet()) {
             matchingTasks.append("\n")
                     .append(formatEntry(numberedDeadline.getKey(), numberedDeadline.getValue()));
         }

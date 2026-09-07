@@ -55,7 +55,7 @@ public class StorageTest {
 
         Deadline loadedDeadline = assertInstanceOf(Deadline.class, loadedTasks.get(1));
         assertEquals("return book", loadedDeadline.getDescription());
-        assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), loadedDeadline.getEndDate());
+        assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), loadedDeadline.getDueDateTime());
 
         Event loadedEvent = assertInstanceOf(Event.class, loadedTasks.get(2));
         assertEquals(LocalDateTime.of(2019, 12, 1, 9, 0), loadedEvent.getStartTime());
@@ -98,13 +98,15 @@ public class StorageTest {
     }
 
     @Test
-    public void saveTasks_finished_noTemporaryFileLeftBehind() throws IOException {
-        // The save writes a temporary file first, which must not survive a successful save.
+    public void saveTasks_existingTemporaryFile_fileLeftUntouched() throws IOException {
+        Path unrelatedTemporaryFile = temporaryDirectory.resolve("HappyBot.txt.tmp");
+        Files.writeString(unrelatedTemporaryFile, "unrelated contents", StandardCharsets.UTF_8);
         Storage storage = new Storage(dataFile());
 
         storage.saveTasks(List.of(new ToDo("read book")));
 
-        assertFalse(Files.exists(temporaryDirectory.resolve("HappyBot.txt.tmp")));
+        assertEquals("unrelated contents",
+                Files.readString(unrelatedTemporaryFile, StandardCharsets.UTF_8));
     }
 
     @Test

@@ -43,7 +43,7 @@ public class MainWindow extends AnchorPane {
     }
 
     /**
-     * Displays the user's command and HappyBot's response.
+     * Displays the user's command and HappyBot's response, or exits for a bye command.
      */
     @FXML
     private void handleUserInput() {
@@ -56,5 +56,9 @@ public class MainWindow extends AnchorPane {
                 DialogBox.getUserDialog(input),
                 DialogBox.getBotDialog(happyBot.getResponse(input)));
         userInput.clear();
+
+        if (Parser.parseCommandWord(input).equals("bye")) {
+            Platform.exit();
+        }
     }
 }
