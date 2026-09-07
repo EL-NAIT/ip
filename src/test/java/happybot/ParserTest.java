@@ -150,7 +150,7 @@ public class ParserTest {
         Deadline deadline = Parser.parseDeadline("return book /by 2019-12-02");
 
         assertEquals("return book", deadline.getDescription());
-        assertEquals(LocalDateTime.of(2019, 12, 2, 0, 0), deadline.getEndDate());
+        assertEquals(LocalDateTime.of(2019, 12, 2, 0, 0), deadline.getDueDateTime());
     }
 
     @Test
@@ -158,14 +158,14 @@ public class ParserTest {
         // The d/M/yyyy pattern accepts a one-digit day and month, so 2/12/2019 is the same date.
         Deadline deadline = Parser.parseDeadline("return book /by 2/12/2019");
 
-        assertEquals(LocalDateTime.of(2019, 12, 2, 0, 0), deadline.getEndDate());
+        assertEquals(LocalDateTime.of(2019, 12, 2, 0, 0), deadline.getDueDateTime());
     }
 
     @Test
     public void parseDeadline_dateWithTime_timeKept() throws HappyBotException {
         Deadline deadline = Parser.parseDeadline("return book /by 2019-12-02 1800");
 
-        assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), deadline.getEndDate());
+        assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), deadline.getDueDateTime());
     }
 
     @Test
@@ -173,7 +173,7 @@ public class ParserTest {
         // Parser collapses runs of spaces before splitting the date from the time.
         Deadline deadline = Parser.parseDeadline("return book /by    2019-12-02    1800   ");
 
-        assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), deadline.getEndDate());
+        assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), deadline.getDueDateTime());
     }
 
     @Test
@@ -225,7 +225,7 @@ public class ParserTest {
         // 2020 is a leap year, so 29 February exists and must still be accepted.
         Deadline deadline = Parser.parseDeadline("return book /by 2020-02-29");
 
-        assertEquals(LocalDateTime.of(2020, 2, 29, 0, 0), deadline.getEndDate());
+        assertEquals(LocalDateTime.of(2020, 2, 29, 0, 0), deadline.getDueDateTime());
     }
 
     @Test

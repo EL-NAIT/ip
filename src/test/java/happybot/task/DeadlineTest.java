@@ -45,9 +45,9 @@ public class DeadlineTest {
     }
 
     @Test
-    public void getEndDate_deadline_dueDateReturned() {
-        LocalDateTime dueDate = LocalDateTime.of(2019, 12, 2, 18, 0);
+    public void getDueDateTime_deadline_dueDateReturned() {
+        LocalDateTime dueDateTime = LocalDateTime.of(2019, 12, 2, 18, 0);
 
-        assertEquals(dueDate, new Deadline("return book", dueDate).getEndDate());
+        assertEquals(dueDateTime, new Deadline("return book", dueDateTime).getDueDateTime());
     }
 }

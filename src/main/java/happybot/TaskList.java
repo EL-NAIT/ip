@@ -45,7 +45,7 @@ public class TaskList {
      *
      * @return The task count.
      */
-    public int size() {
+    public int getSize() {
         return tasks.size();
     }
 
@@ -83,7 +83,7 @@ public class TaskList {
      * @return The task holding that number.
      * @throws HappyBotException If no task holds that number.
      */
-    public Task get(int taskNumber) throws HappyBotException {
+    public Task getTask(int taskNumber) throws HappyBotException {
         checkTaskNumber(taskNumber);
         return tasks.get(taskNumber - 1);
     }
@@ -111,19 +111,19 @@ public class TaskList {
      * @param date The date the deadlines are wanted for.
      * @return The matching deadlines in list order, stored under their task numbers.
      */
-    public Map<Integer, Task> findDeadlinesDueOn(LocalDate date) {
+    public Map<Integer, Deadline> findDeadlinesDueOn(LocalDate date) {
         // A LinkedHashMap keeps the deadlines in list order while remembering each task number.
-        Map<Integer, Task> matchingTasks = new LinkedHashMap<>();
+        Map<Integer, Deadline> matchingDeadlines = new LinkedHashMap<>();
 
         for (int i = 0; i < tasks.size(); i++) {
             // A todo and an event have no due date, so only a deadline can match.
             if (tasks.get(i) instanceof Deadline deadline
-                    && deadline.getEndDate().toLocalDate().equals(date)) {
-                matchingTasks.put(i + 1, deadline);
+                    && deadline.getDueDateTime().toLocalDate().equals(date)) {
+                matchingDeadlines.put(i + 1, deadline);
             }
         }
 
-        return matchingTasks;
+        return matchingDeadlines;
     }
 
     /**

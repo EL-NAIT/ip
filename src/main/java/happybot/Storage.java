@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -41,9 +40,6 @@ public class Storage {
     /** Completion field value written for a task that is not done. */
     private static final String COMPLETION_STATUS_NOT_DONE = "0";
 
-    /** Suffix of the temporary file used to make each save all-or-nothing. */
-    private static final String TEMPORARY_FILE_SUFFIX = ".tmp";
-
     private final Path filePath;
 
     /** Number of unreadable lines skipped by the most recent call to loadTasks(). */
@@ -79,9 +75,6 @@ public class Storage {
     /**
      * Saves all tasks to the data file, replacing any previous contents.
      *
-     * <p>The lines are written to a temporary file that then replaces the data file, so an
-     * interrupted save leaves the previous data file intact instead of a half-written one.
-     *
      * @param tasks The tasks to save.
      * @throws IOException If the data file cannot be written.
      */
@@ -97,20 +90,7 @@ public class Storage {
             taskLines.add(formatTask(task));
         }
 
-        // resolveSibling() places the temporary file in the same directory as the data file.
-        // ATOMIC_MOVE works only within one file system, so a system temporary directory,
-        // which may sit on another file system, cannot be used here.
-        Path temporaryFile = filePath.resolveSibling(filePath.getFileName() + TEMPORARY_FILE_SUFFIX);
-        try {
-            // Filling the temporary file first leaves the previous data file untouched until the
-            // new contents are complete, so an interrupted save cannot truncate saved tasks.
-            Files.write(temporaryFile, taskLines, StandardCharsets.UTF_8);
-            Files.move(temporaryFile, filePath,
-                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } finally {
-            // A successful move consumes the temporary file, so this only cleans up after a failure.
-            Files.deleteIfExists(temporaryFile);
-        }
+        Files.write(filePath, taskLines, StandardCharsets.UTF_8);
     }
 
     /**
@@ -121,18 +101,14 @@ public class Storage {
      * successfully.
      *
      * @return A modifiable list of the tasks that were read successfully.
-     * @throws IOException If the data file exists but cannot be read.
+     * @throws IOException If the data file cannot be read.
      */
     public List<Task> loadTasks() throws IOException {
         skippedLineCount = 0;
         List<Task> tasks = new ArrayList<>();
 
-        if (!Files.exists(filePath)) {
+        if (Files.notExists(filePath)) {
             return tasks;
-        }
-
-        if (!Files.isRegularFile(filePath)) {
-            throw new IOException("The data file path is not a regular file: " + filePath);
         }
 
         List<String> taskLines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
@@ -167,7 +143,7 @@ public class Storage {
 
         if (task instanceof Deadline deadline) {
             return String.join(FIELD_SEPARATOR, TASK_TYPE_DEADLINE, completionStatus,
-                    deadline.getDescription(), deadline.getEndDate().toString());
+                    deadline.getDescription(), deadline.getDueDateTime().toString());
         }
 
         if (task instanceof Event event) {
@@ -195,21 +171,21 @@ public class Storage {
         Task task;
 
         switch (taskType) {
-        case TASK_TYPE_TODO:
-            checkFieldCount(fields, FIELD_COUNT_TODO, taskLine);
-            task = new ToDo(fields[2]);
-            break;
-        case TASK_TYPE_DEADLINE:
-            checkFieldCount(fields, FIELD_COUNT_DEADLINE, taskLine);
-            task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
-            break;
-        case TASK_TYPE_EVENT:
-            checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
-            task = new Event(LocalDateTime.parse(fields[3]),
-                    LocalDateTime.parse(fields[4]), fields[2]);
-            break;
-        default:
-            throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
+            case TASK_TYPE_TODO:
+                checkFieldCount(fields, FIELD_COUNT_TODO, taskLine);
+                task = new ToDo(fields[2]);
+                break;
+            case TASK_TYPE_DEADLINE:
+                checkFieldCount(fields, FIELD_COUNT_DEADLINE, taskLine);
+                task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
+                break;
+            case TASK_TYPE_EVENT:
+                checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
+                task = new Event(LocalDateTime.parse(fields[3]),
+                        LocalDateTime.parse(fields[4]), fields[2]);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
         }
 
         if (parseCompletionStatus(fields[1], taskLine)) {
