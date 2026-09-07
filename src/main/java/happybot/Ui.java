@@ -65,8 +65,7 @@ public class Ui {
     public void showWelcome() {
         System.out.println(DIVIDER + "\n"
                 + BANNER
-                + "Hello! I'm HappyBot.\n"
-                + "How can I cheer you up today?\n"
+                + getWelcomeMessage() + "\n"
                 + DIVIDER);
     }
 
@@ -74,26 +73,44 @@ public class Ui {
      * Prints HappyBot's farewell message.
      */
     public void showGoodbye() {
-        System.out.println("Bye. Hope to see you again soon!\n" + DIVIDER);
+        System.out.println(getGoodbyeMessage() + "\n" + DIVIDER);
     }
 
     /**
-     * Prints every task together with its number and completion status.
+     * Returns HappyBot's welcome message without console decoration.
+     *
+     * @return The welcome message.
+     */
+    public String getWelcomeMessage() {
+        return "Hello! I'm HappyBot.\nHow can I cheer you up today?";
+    }
+
+    /**
+     * Returns HappyBot's farewell message without console decoration.
+     *
+     * @return The farewell message.
+     */
+    public String getGoodbyeMessage() {
+        return "Bye. Hope to see you again soon!";
+    }
+
+    /**
+     * Formats every task together with its number and completion status.
      *
      * @param tasks The tasks to display, numbered from one in the order given.
      */
-    public void showTaskList(List<Task> tasks) {
+    String formatTaskList(List<Task> tasks) {
         StringBuilder taskList = new StringBuilder(" Here are the tasks in your list:");
 
         for (int i = 0; i < tasks.size(); i++) {
             taskList.append("\n").append(formatEntry(i + 1, tasks.get(i)));
         }
 
-        showReply(taskList.toString());
+        return taskList.toString();
     }
 
     /**
-     * Prints the deadlines due on one date, or a notice when there are none.
+     * Formats the deadlines due on one date, or a notice when there are none.
      *
      * <p>The numbers come from the caller rather than from the position in this listing,
      * because a deadline shown here is marked or deleted by its number in the full task list.
@@ -101,10 +118,9 @@ public class Ui {
      * @param displayedDate The date the deadlines fall on, already written for display.
      * @param numberedDeadlines The deadlines to show, each stored under its task number.
      */
-    public void showDeadlinesDueOn(String displayedDate, Map<Integer, Task> numberedDeadlines) {
+    String formatDeadlinesDueOn(String displayedDate, Map<Integer, Task> numberedDeadlines) {
         if (numberedDeadlines.isEmpty()) {
-            showReply(" There are no deadlines due on " + displayedDate + ".");
-            return;
+            return " There are no deadlines due on " + displayedDate + ".";
         }
 
         StringBuilder matchingTasks =
@@ -115,11 +131,11 @@ public class Ui {
                     .append(formatEntry(numberedDeadline.getKey(), numberedDeadline.getValue()));
         }
 
-        showReply(matchingTasks.toString());
+        return matchingTasks.toString();
     }
 
     /**
-     * Prints the tasks matching a keyword, or a notice when there are none.
+     * Formats the tasks matching a keyword, or a notice when there are none.
      *
      * <p>The numbers come from the caller rather than from the position in this listing,
      * because a task shown here is marked or deleted by its number in the full task list.
@@ -127,10 +143,9 @@ public class Ui {
      * @param keyword The keyword that was searched for.
      * @param numberedTasks The matching tasks, each stored under its task number.
      */
-    public void showMatchingTasks(String keyword, Map<Integer, Task> numberedTasks) {
+    String formatMatchingTasks(String keyword, Map<Integer, Task> numberedTasks) {
         if (numberedTasks.isEmpty()) {
-            showReply(" There are no tasks matching \"" + keyword + "\".");
-            return;
+            return " There are no tasks matching \"" + keyword + "\".";
         }
 
         StringBuilder matchingTasks = new StringBuilder(" Here are the matching tasks in your list:");
@@ -140,91 +155,107 @@ public class Ui {
                     .append(formatEntry(numberedTask.getKey(), numberedTask.getValue()));
         }
 
-        showReply(matchingTasks.toString());
+        return matchingTasks.toString();
     }
 
     /**
-     * Confirms that a task was added.
+     * Formats the confirmation that a task was added.
      *
      * @param addedTask The task that was added.
      * @param taskCount The number of tasks now in the list.
      */
-    public void showAddedTask(Task addedTask, int taskCount) {
-        showReply(" Got it. I've added this task:\n"
+    String formatAddedTask(Task addedTask, int taskCount) {
+        return " Got it. I've added this task:\n"
                 + "   " + addedTask + "\n"
-                + " Now you have " + taskCount + " tasks in the list.");
+                + " Now you have " + taskCount + " tasks in the list.";
     }
 
     /**
-     * Confirms that a task was removed.
+     * Formats the confirmation that a task was removed.
      *
      * @param deletedTask The task that was removed.
      * @param taskCount The number of tasks left in the list.
      */
-    public void showDeletedTask(Task deletedTask, int taskCount) {
-        showReply(" Alrighties I've removed this task:\n"
+    String formatDeletedTask(Task deletedTask, int taskCount) {
+        return " Alrighties I've removed this task:\n"
                 + "   " + deletedTask + "\n"
-                + " Now you have " + taskCount + " tasks in the list.");
+                + " Now you have " + taskCount + " tasks in the list.";
     }
 
     /**
-     * Confirms that a task was marked as done.
+     * Formats the confirmation that a task was marked as done.
      *
      * @param markedTask The task that was marked.
      */
-    public void showMarkedTask(Task markedTask) {
-        showReply(" Nice! I've marked this task as done:\n"
-                + "   " + markedTask);
+    String formatMarkedTask(Task markedTask) {
+        return " Nice! I've marked this task as done:\n"
+                + "   " + markedTask;
     }
 
     /**
-     * Confirms that a task was marked as not done.
+     * Formats the confirmation that a task was marked as not done.
      *
      * @param unmarkedTask The task that was unmarked.
      */
-    public void showUnmarkedTask(Task unmarkedTask) {
-        showReply(" OK, I've marked this task as not done yet:\n"
-                + "   " + unmarkedTask);
+    String formatUnmarkedTask(Task unmarkedTask) {
+        return " OK, I've marked this task as not done yet:\n"
+                + "   " + unmarkedTask;
     }
 
     /**
-     * Reports that the saved tasks could not be read.
+     * Formats a warning that the saved tasks could not be read.
      *
      * @param filePath The location of the data file.
      */
-    public void showLoadingError(Path filePath) {
-        // A notice answers no command, so it opens a block of its own instead of closing one.
-        System.out.println(DIVIDER + "\n Heads up! I could not read " + filePath
-                + ", so I am starting with an empty task list.\n" + DIVIDER);
+    String formatLoadingError(Path filePath) {
+        return " Heads up! I could not read " + filePath
+                + ", so I am starting with an empty task list.";
     }
 
     /**
-     * Reports how many saved lines were unreadable and therefore left out.
+     * Formats a warning about saved lines that were unreadable and therefore left out.
      *
      * @param skippedLineCount The number of lines that were skipped.
      */
-    public void showSkippedLinesNotice(int skippedLineCount) {
-        // A notice answers no command, so it opens a block of its own instead of closing one.
-        System.out.println(DIVIDER + "\n Heads up! I skipped " + skippedLineCount
-                + " unreadable line(s) in your saved data.\n" + DIVIDER);
+    String formatSkippedLinesNotice(int skippedLineCount) {
+        return " Heads up! I skipped " + skippedLineCount
+                + " unreadable line(s) in your saved data.";
     }
 
     /**
-     * Reports that the tasks could not be written to the data file.
+     * Formats a warning that the tasks could not be written to the data file.
      *
      * @param filePath The location of the data file.
      */
-    public void showSavingError(Path filePath) {
-        showReply(" Heads up! I could not save your tasks to " + filePath + ".");
+    String formatSavingError(Path filePath) {
+        return " Heads up! I could not save your tasks to " + filePath + ".";
     }
 
     /**
-     * Reports a command that HappyBot could not carry out.
+     * Formats an error for a command that HappyBot could not carry out.
      *
      * @param message The explanation of what was wrong with the command.
      */
-    public void showError(String message) {
-        showReply(" Oops! " + message);
+    String formatError(String message) {
+        return " Oops! " + message;
+    }
+
+    /**
+     * Prints a startup notice inside its own divider lines.
+     *
+     * @param notice The notice to print.
+     */
+    void showNotice(String notice) {
+        System.out.println(DIVIDER + "\n" + notice + "\n" + DIVIDER);
+    }
+
+    /**
+     * Prints a response followed by a divider line.
+     *
+     * @param response The response to print.
+     */
+    void showResponse(String response) {
+        showReply(response);
     }
 
     /**

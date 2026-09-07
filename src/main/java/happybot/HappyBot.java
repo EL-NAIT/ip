@@ -27,11 +27,18 @@ public class HappyBot {
     /** Tasks held by this HappyBot for the length of the session. */
     private TaskList tasks;
 
+    /** Warning about saved data that should be shown after the welcome message, if any. */
+    private final String startupNotice;
+
+    /**
+     * Creates a HappyBot that uses the default data file.
+     */
+    public HappyBot() {
+        this(DATA_FILE_PATH);
+    }
+
     /**
      * Creates a HappyBot that keeps its tasks in the specified data file.
-     *
-     * <p>The saved tasks are read in run() rather than here, so that the welcome message is
-     * printed before any notice about unreadable saved data.
      *
      * @param filePath The location of the task data file.
      */
@@ -39,121 +46,164 @@ public class HappyBot {
         this.ui = new Ui();
         this.storage = new Storage(filePath);
         this.tasks = new TaskList();
+        this.startupNotice = loadSavedTasks();
     }
 
     /**
-     * Loads the saved tasks and reports saved data that could not be read.
+     * Loads the saved tasks and returns a warning about data that could not be read.
      *
      * <p>A data file that cannot be read must not end the session, so the problem is reported
      * and HappyBot starts with the empty task list made by the constructor.
      */
-    private void loadSavedTasks() {
+    private String loadSavedTasks() {
         try {
             tasks = new TaskList(storage.loadTasks());
             if (storage.getSkippedLineCount() > 0) {
-                ui.showSkippedLinesNotice(storage.getSkippedLineCount());
+                return ui.formatSkippedLinesNotice(storage.getSkippedLineCount());
             }
         } catch (IOException e) {
-            ui.showLoadingError(storage.getFilePath());
+            return ui.formatLoadingError(storage.getFilePath());
         }
+
+        return null;
     }
 
     /**
-     * Saves the tasks and warns the user when the data file cannot be written.
+     * Saves the tasks and returns a warning when the data file cannot be written.
      *
      * <p>A failed save must not end the session, so the problem is reported and the in-memory
      * task list is kept for the rest of the run.
      */
-    private void saveTasks() {
+    private String saveTasks() {
         try {
             storage.saveTasks(tasks.getTasks());
         } catch (IOException e) {
-            ui.showSavingError(storage.getFilePath());
+            return ui.formatSavingError(storage.getFilePath()) + "\n";
         }
+
+        return "";
     }
 
     /**
-     * Adds a task, saves the updated list, and confirms the addition to the user.
+     * Adds a task, saves the updated list, and returns a confirmation.
      *
      * @param taskToAdd The task to add.
      */
-    private void addTask(Task taskToAdd) {
+    private String addTask(Task taskToAdd) {
         tasks.add(taskToAdd);
-        saveTasks();
-        ui.showAddedTask(taskToAdd, tasks.size());
+        return saveTasks() + ui.formatAddedTask(taskToAdd, tasks.size());
     }
 
     /**
-     * Marks a selected task as completed.
+     * Marks a selected task as completed and returns a confirmation.
      *
      * @param body The command text after the command word.
      * @throws HappyBotException If there are no tasks or the task number is invalid.
      */
-    private void markTask(String body) throws HappyBotException {
+    private String markTask(String body) throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to mark.");
         }
 
         Task taskToMark = tasks.get(Parser.parseTaskNumber(body));
         taskToMark.markAsDone();
-        saveTasks();
-        ui.showMarkedTask(taskToMark);
+        return saveTasks() + ui.formatMarkedTask(taskToMark);
     }
 
     /**
-     * Marks a selected task as not completed.
+     * Marks a selected task as not completed and returns a confirmation.
      *
      * @param body The command text after the command word.
      * @throws HappyBotException If there are no tasks or the task number is invalid.
      */
-    private void unmarkTask(String body) throws HappyBotException {
+    private String unmarkTask(String body) throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to unmark.");
         }
 
         Task taskToUnmark = tasks.get(Parser.parseTaskNumber(body));
         taskToUnmark.unmarkAsDone();
-        saveTasks();
-        ui.showUnmarkedTask(taskToUnmark);
+        return saveTasks() + ui.formatUnmarkedTask(taskToUnmark);
     }
 
     /**
-     * Deletes a selected task from the list.
+     * Deletes a selected task from the list and returns a confirmation.
      *
      * @param body The command text after the command word.
      * @throws HappyBotException If there are no tasks or the task number is invalid.
      */
-    private void deleteTask(String body) throws HappyBotException {
+    private String deleteTask(String body) throws HappyBotException {
         if (tasks.isEmpty()) {
             throw new HappyBotException("There are no tasks to delete.");
         }
 
         Task taskToDelete = tasks.delete(Parser.parseTaskNumber(body));
-        saveTasks();
-        ui.showDeletedTask(taskToDelete, tasks.size());
+        return saveTasks() + ui.formatDeletedTask(taskToDelete, tasks.size());
     }
 
     /**
-     * Shows the deadlines due on the specified date.
+     * Returns the deadlines due on the specified date.
      *
      * <p>Each deadline is collected under the number it has in the full list, so one shown here
      * can be marked or deleted with the number displayed beside it.
      *
      * @param date The date the user asked about.
      */
-    private void showDeadlinesDueOn(LocalDate date) {
+    private String getDeadlinesDueOn(LocalDate date) {
         // Reusing the task display keeps one source of truth for how a date is written.
         String displayedDate = DatedTask.formatDate(date);
-        ui.showDeadlinesDueOn(displayedDate, tasks.findDeadlinesDueOn(date));
+        return ui.formatDeadlinesDueOn(displayedDate, tasks.findDeadlinesDueOn(date));
     }
 
     /**
-     * Shows the tasks whose description holds the specified keyword.
+     * Returns the tasks whose description holds the specified keyword.
      *
      * @param keyword The keyword the user asked about.
      */
-    private void showMatchingTasks(String keyword) {
-        ui.showMatchingTasks(keyword, tasks.findTasksContaining(keyword));
+    private String getMatchingTasks(String keyword) {
+        return ui.formatMatchingTasks(keyword, tasks.findTasksContaining(keyword));
+    }
+
+    /**
+     * Returns the welcome message and any warning raised while loading saved tasks.
+     *
+     * @return The message to show when a graphical session starts.
+     */
+    public String getWelcomeMessage() {
+        if (startupNotice == null) {
+            return ui.getWelcomeMessage();
+        }
+
+        return ui.getWelcomeMessage() + "\n\n" + startupNotice.stripLeading();
+    }
+
+    /**
+     * Executes one command and returns HappyBot's response.
+     *
+     * @param userInput The command entered by the user.
+     * @return HappyBot's response to the command.
+     */
+    public String getResponse(String userInput) {
+        String command = Parser.parseCommandWord(userInput);
+        String body = Parser.parseCommandBody(userInput);
+
+        try {
+            return switch (command) {
+            case "bye" -> ui.getGoodbyeMessage();
+            case "list" -> ui.formatTaskList(tasks.getTasks());
+            case "mark" -> markTask(body);
+            case "unmark" -> unmarkTask(body);
+            case "delete" -> deleteTask(body);
+            case "due" -> getDeadlinesDueOn(Parser.parseDueDate(body));
+            case "find" -> getMatchingTasks(Parser.parseKeyword(body));
+            case "todo" -> addTask(Parser.parseToDo(body));
+            case "deadline" -> addTask(Parser.parseDeadline(body));
+            case "event" -> addTask(Parser.parseEvent(body));
+            default -> throw new HappyBotException("I don't know what that means :-(");
+            };
+        } catch (HappyBotException e) {
+            return ui.formatError(e.getMessage());
+        }
     }
 
     /**
@@ -163,52 +213,20 @@ public class HappyBot {
         boolean isRunning = true;
 
         ui.showWelcome();
-        loadSavedTasks();
+        if (startupNotice != null) {
+            ui.showNotice(startupNotice);
+        }
 
         // Stopping at the end of the input also ends the session cleanly when no bye is typed.
         while (isRunning && ui.hasNextCommand()) {
             String userInput = ui.readCommand();
             ui.showDivider();
             String command = Parser.parseCommandWord(userInput);
-            String body = Parser.parseCommandBody(userInput);
 
-            try {
-                switch (command) {
-                case "bye":
-                    isRunning = false;
-                    break;
-                case "list":
-                    ui.showTaskList(tasks.getTasks());
-                    break;
-                case "mark":
-                    markTask(body);
-                    break;
-                case "unmark":
-                    unmarkTask(body);
-                    break;
-                case "delete":
-                    deleteTask(body);
-                    break;
-                case "due":
-                    showDeadlinesDueOn(Parser.parseDueDate(body));
-                    break;
-                case "find":
-                    showMatchingTasks(Parser.parseKeyword(body));
-                    break;
-                case "todo":
-                    addTask(Parser.parseToDo(body));
-                    break;
-                case "deadline":
-                    addTask(Parser.parseDeadline(body));
-                    break;
-                case "event":
-                    addTask(Parser.parseEvent(body));
-                    break;
-                default:
-                    throw new HappyBotException("I don't know what that means :-(");
-                }
-            } catch (HappyBotException e) {
-                ui.showError(e.getMessage());
+            if (command.equals("bye")) {
+                isRunning = false;
+            } else {
+                ui.showResponse(getResponse(userInput));
             }
         }
 
