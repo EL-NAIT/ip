@@ -19,6 +19,8 @@ public class Event extends DatedTask {
      */
     public Event(LocalDateTime start, LocalDateTime end, String description) {
         super(description);
+        assert start != null && end != null && start.isBefore(end)
+                : "An event must have a start time before its end time.";
         this.startTime = start;
         this.endTime = end;
     }

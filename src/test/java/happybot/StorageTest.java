@@ -217,6 +217,20 @@ public class StorageTest {
     }
 
     @Test
+    public void loadTasks_eventEndingAtOrBeforeStart_linesSkippedAndCounted() throws IOException {
+        writeDataFile("E | 0 | meeting | 2019-12-01T09:00 | 2019-12-01T09:00",
+                "E | 0 | review | 2019-12-02T09:00 | 2019-12-02T08:00",
+                "E | 0 | lecture | 2019-12-03T09:00 | 2019-12-03T10:00");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        assertEquals(1, loadedTasks.size());
+        assertEquals("lecture", loadedTasks.get(0).getDescription());
+        assertEquals(2, storage.getSkippedLineCount());
+    }
+
+    @Test
     public void loadTasks_severalUnreadableLines_allCounted() throws IOException {
         writeDataFile("X | 0 | mystery", "T | 0", "T | 0 | read book", "D | 0 | return book | soon");
         Storage storage = new Storage(dataFile());
