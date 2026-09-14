@@ -167,32 +167,41 @@ public class Storage {
         String[] fields = taskLine.split(FIELD_SEPARATOR_REGEX);
         checkFieldsAreFilled(fields, taskLine);
 
-        String taskType = fields[0];
-        Task task;
-
-        switch (taskType) {
-            case TASK_TYPE_TODO:
-                checkFieldCount(fields, FIELD_COUNT_TODO, taskLine);
-                task = new ToDo(fields[2]);
-                break;
-            case TASK_TYPE_DEADLINE:
-                checkFieldCount(fields, FIELD_COUNT_DEADLINE, taskLine);
-                task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
-                break;
-            case TASK_TYPE_EVENT:
-                checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
-                task = new Event(LocalDateTime.parse(fields[3]),
-                        LocalDateTime.parse(fields[4]), fields[2]);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
-        }
+        Task task = createTask(fields, taskLine);
 
         if (parseCompletionStatus(fields[1], taskLine)) {
             task.markAsDone();
         }
 
         return task;
+    }
+
+    /**
+     * Creates a task from the type-specific fields of a saved line.
+     *
+     * @param fields The fields parsed from the line.
+     * @param taskLine The original line, included in the error message.
+     * @return The task described by the type-specific fields.
+     * @throws IllegalArgumentException If the line has an unknown type or the wrong field count.
+     * @throws DateTimeParseException If a date field is not a date and time in ISO form.
+     */
+    private Task createTask(String[] fields, String taskLine) {
+        String taskType = fields[0];
+
+        return switch (taskType) {
+            case TASK_TYPE_TODO:
+                checkFieldCount(fields, FIELD_COUNT_TODO, taskLine);
+                yield new ToDo(fields[2]);
+            case TASK_TYPE_DEADLINE:
+                checkFieldCount(fields, FIELD_COUNT_DEADLINE, taskLine);
+                yield new Deadline(fields[2], LocalDateTime.parse(fields[3]));
+            case TASK_TYPE_EVENT:
+                checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
+                yield new Event(LocalDateTime.parse(fields[3]),
+                        LocalDateTime.parse(fields[4]), fields[2]);
+            default:
+                throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
+        };
     }
 
     /**

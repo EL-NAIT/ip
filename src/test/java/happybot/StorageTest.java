@@ -158,6 +158,24 @@ public class StorageTest {
     }
 
     @Test
+    public void loadTasks_everySupportedStoredType_typesAndDetailsRestored() throws IOException {
+        writeDataFile("T | 0 | read book", "D | 1 | return book | 2019-12-02T18:00",
+                "E | 0 | orientation | 2019-12-01T09:00 | 2019-12-03T17:00");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        assertInstanceOf(ToDo.class, loadedTasks.get(0));
+        Deadline deadline = assertInstanceOf(Deadline.class, loadedTasks.get(1));
+        assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), deadline.getDueDateTime());
+        assertTrue(deadline.isDone());
+
+        Event event = assertInstanceOf(Event.class, loadedTasks.get(2));
+        assertEquals(LocalDateTime.of(2019, 12, 1, 9, 0), event.getStartTime());
+        assertEquals(LocalDateTime.of(2019, 12, 3, 17, 0), event.getEndTime());
+    }
+
+    @Test
     public void loadTasks_unknownTaskType_lineSkippedAndCounted() throws IOException {
         writeDataFile("T | 0 | read book", "X | 0 | mystery task");
         Storage storage = new Storage(dataFile());
