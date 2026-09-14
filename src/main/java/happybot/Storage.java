@@ -205,9 +205,13 @@ public class Storage {
                         LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]));
             case TASK_TYPE_EVENT:
                 checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
-                yield new Event(LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]),
-                        LocalDateTime.parse(fields[SECOND_DATE_TIME_FIELD_INDEX]),
-                        fields[DESCRIPTION_FIELD_INDEX]);
+                LocalDateTime startTime = LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]);
+                LocalDateTime endTime = LocalDateTime.parse(fields[SECOND_DATE_TIME_FIELD_INDEX]);
+                if (!startTime.isBefore(endTime)) {
+                    throw new IllegalArgumentException("Event end time must be after its start time: "
+                            + taskLine);
+                }
+                yield new Event(startTime, endTime, fields[DESCRIPTION_FIELD_INDEX]);
             default:
                 throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
         };
