@@ -29,7 +29,7 @@ both need saved data that is already there and already broken. The runner has
 one run command for every case and no per-case setup, so these two are checked
 by hand from a scratch directory holding a `../../data/HappyBot.txt`:
 
-- a file with unreadable lines prints
+- a file with unreadable lines, including an event whose end is not after its start, prints
   `Heads up! I skipped <n> unreadable line(s) in your saved data.`
 - a file that cannot be read at all prints
   `Heads up! I could not read data/HappyBot.txt, so I am starting with an empty

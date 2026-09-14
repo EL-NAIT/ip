@@ -1,6 +1,7 @@
 package happybot.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDateTime;
 
@@ -45,5 +46,12 @@ public class EventTest {
 
         assertEquals(start, event.getStartTime());
         assertEquals(end, event.getEndTime());
+    }
+
+    @Test
+    public void constructor_endNotAfterStart_assertionErrorThrown() {
+        LocalDateTime time = LocalDateTime.of(2019, 12, 1, 9, 0);
+
+        assertThrows(AssertionError.class, () -> new Event(time, time, "orientation"));
     }
 }
