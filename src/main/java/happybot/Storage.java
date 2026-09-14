@@ -28,6 +28,13 @@ public class Storage {
     private static final int FIELD_COUNT_DEADLINE = 4;
     private static final int FIELD_COUNT_EVENT = 5;
 
+    /** Positions of the fields in a saved task line. */
+    private static final int TASK_TYPE_FIELD_INDEX = 0;
+    private static final int COMPLETION_STATUS_FIELD_INDEX = 1;
+    private static final int DESCRIPTION_FIELD_INDEX = 2;
+    private static final int FIRST_DATE_TIME_FIELD_INDEX = 3;
+    private static final int SECOND_DATE_TIME_FIELD_INDEX = 4;
+
     /** Text placed between the fields of a saved task line. */
     private static final String FIELD_SEPARATOR = " | ";
 
@@ -169,7 +176,7 @@ public class Storage {
 
         Task task = createTask(fields, taskLine);
 
-        if (parseCompletionStatus(fields[1], taskLine)) {
+        if (parseCompletionStatus(fields[COMPLETION_STATUS_FIELD_INDEX], taskLine)) {
             task.markAsDone();
         }
 
@@ -186,19 +193,21 @@ public class Storage {
      * @throws DateTimeParseException If a date field is not a date and time in ISO form.
      */
     private Task createTask(String[] fields, String taskLine) {
-        String taskType = fields[0];
+        String taskType = fields[TASK_TYPE_FIELD_INDEX];
 
         return switch (taskType) {
             case TASK_TYPE_TODO:
                 checkFieldCount(fields, FIELD_COUNT_TODO, taskLine);
-                yield new ToDo(fields[2]);
+                yield new ToDo(fields[DESCRIPTION_FIELD_INDEX]);
             case TASK_TYPE_DEADLINE:
                 checkFieldCount(fields, FIELD_COUNT_DEADLINE, taskLine);
-                yield new Deadline(fields[2], LocalDateTime.parse(fields[3]));
+                yield new Deadline(fields[DESCRIPTION_FIELD_INDEX],
+                        LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]));
             case TASK_TYPE_EVENT:
                 checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
-                yield new Event(LocalDateTime.parse(fields[3]),
-                        LocalDateTime.parse(fields[4]), fields[2]);
+                yield new Event(LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]),
+                        LocalDateTime.parse(fields[SECOND_DATE_TIME_FIELD_INDEX]),
+                        fields[DESCRIPTION_FIELD_INDEX]);
             default:
                 throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
         };

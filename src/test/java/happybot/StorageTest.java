@@ -165,12 +165,15 @@ public class StorageTest {
 
         List<Task> loadedTasks = storage.loadTasks();
 
-        assertInstanceOf(ToDo.class, loadedTasks.get(0));
+        Task todo = assertInstanceOf(ToDo.class, loadedTasks.get(0));
+        assertEquals("read book", todo.getDescription());
         Deadline deadline = assertInstanceOf(Deadline.class, loadedTasks.get(1));
+        assertEquals("return book", deadline.getDescription());
         assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), deadline.getDueDateTime());
         assertTrue(deadline.isDone());
 
         Event event = assertInstanceOf(Event.class, loadedTasks.get(2));
+        assertEquals("orientation", event.getDescription());
         assertEquals(LocalDateTime.of(2019, 12, 1, 9, 0), event.getStartTime());
         assertEquals(LocalDateTime.of(2019, 12, 3, 17, 0), event.getEndTime());
     }
