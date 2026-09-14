@@ -3,6 +3,7 @@ package happybot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -66,13 +68,15 @@ public class StorageTest {
     public void saveThenLoad_completedTask_stillCompleted() throws IOException {
         Storage storage = new Storage(dataFile());
         Task doneTask = new ToDo("read book");
-        doneTask.markAsDone();
+        doneTask.markAsDone(LocalDate.of(2026, 9, 16));
         storage.saveTasks(List.of(doneTask, new ToDo("return book")));
 
         List<Task> loadedTasks = storage.loadTasks();
 
         assertTrue(loadedTasks.get(0).isDone());
+        assertEquals(LocalDate.of(2026, 9, 16), loadedTasks.get(0).getCompletionDate());
         assertFalse(loadedTasks.get(1).isDone());
+        assertNull(loadedTasks.get(1).getCompletionDate());
     }
 
     @Test
@@ -158,6 +162,29 @@ public class StorageTest {
     }
 
     @Test
+    public void loadTasks_legacyCompletedTask_completionDateUnknown() throws IOException {
+        writeDataFile("T | 1 | read book");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        assertTrue(loadedTasks.get(0).isDone());
+        assertNull(loadedTasks.get(0).getCompletionDate());
+    }
+
+    @Test
+    public void saveTasks_legacyCompletedTask_extendedFormatUsesPlaceholder() throws IOException {
+        Task legacyCompletedTask = new ToDo("read book");
+        legacyCompletedTask.markAsDone();
+        Storage storage = new Storage(dataFile());
+
+        storage.saveTasks(List.of(legacyCompletedTask));
+
+        assertEquals(List.of("T | 1 | read book | -"),
+                Files.readAllLines(dataFile(), StandardCharsets.UTF_8));
+    }
+
+    @Test
     public void loadTasks_unknownTaskType_lineSkippedAndCounted() throws IOException {
         writeDataFile("T | 0 | read book", "X | 0 | mystery task");
         Storage storage = new Storage(dataFile());
@@ -210,6 +237,33 @@ public class StorageTest {
     @Test
     public void loadTasks_unreadableDate_lineSkippedAndCounted() throws IOException {
         writeDataFile("D | 0 | return book | 2 Dec 2019");
+        Storage storage = new Storage(dataFile());
+
+        assertTrue(storage.loadTasks().isEmpty());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_invalidCompletionDate_lineSkippedAndCounted() throws IOException {
+        writeDataFile("T | 1 | read book | not-a-date");
+        Storage storage = new Storage(dataFile());
+
+        assertTrue(storage.loadTasks().isEmpty());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_blankCompletionDate_lineSkippedAndCounted() throws IOException {
+        writeDataFile("T | 1 | read book | ");
+        Storage storage = new Storage(dataFile());
+
+        assertTrue(storage.loadTasks().isEmpty());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_uncompletedTaskWithCompletionDate_lineSkippedAndCounted() throws IOException {
+        writeDataFile("T | 0 | read book | 2026-09-16");
         Storage storage = new Storage(dataFile());
 
         assertTrue(storage.loadTasks().isEmpty());

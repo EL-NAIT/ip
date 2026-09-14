@@ -1,6 +1,8 @@
 package happybot;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -9,7 +11,9 @@ import java.util.Locale;
 import java.util.Map;
 
 import happybot.task.Deadline;
+import happybot.task.Event;
 import happybot.task.Task;
+import happybot.task.ToDo;
 
 /**
  * Holds the tasks of one HappyBot session and the operations that change them.
@@ -151,6 +155,61 @@ public class TaskList {
         }
 
         return matchingTasks;
+    }
+
+    /**
+     * Returns the statistics for the Monday-to-Sunday week containing the specified date.
+     *
+     * @param currentDate A date in the week whose statistics are wanted.
+     * @return The task counts for that week.
+     */
+    TaskStatistics getStatistics(LocalDate currentDate) {
+        LocalDate weekStart = currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate weekEnd = weekStart.plusDays(6);
+        int completedTaskCount = 0;
+        int completedToDoCount = 0;
+        int completedDeadlineCount = 0;
+        int completedEventCount = 0;
+        int uncompletedDeadlineCount = 0;
+
+        for (Task task : tasks) {
+            if (isCompletedInWeek(task, weekStart, weekEnd)) {
+                completedTaskCount++;
+                if (task instanceof ToDo) {
+                    completedToDoCount++;
+                } else if (task instanceof Deadline) {
+                    completedDeadlineCount++;
+                } else if (task instanceof Event) {
+                    completedEventCount++;
+                }
+            }
+
+            if (task instanceof Deadline deadline
+                    && !task.isDone()
+                    && isDateInWeek(deadline.getDueDateTime().toLocalDate(), weekStart, weekEnd)) {
+                uncompletedDeadlineCount++;
+            }
+        }
+
+        return new TaskStatistics(tasks.size(), completedTaskCount, completedToDoCount,
+                completedDeadlineCount, completedEventCount, uncompletedDeadlineCount);
+    }
+
+    /**
+     * Returns whether a task is currently done and was completed during the given week.
+     */
+    private static boolean isCompletedInWeek(Task task, LocalDate weekStart, LocalDate weekEnd) {
+        LocalDate completionDate = task.getCompletionDate();
+        return task.isDone()
+                && completionDate != null
+                && isDateInWeek(completionDate, weekStart, weekEnd);
+    }
+
+    /**
+     * Returns whether a date falls between the week's inclusive start and end dates.
+     */
+    private static boolean isDateInWeek(LocalDate date, LocalDate weekStart, LocalDate weekEnd) {
+        return !date.isBefore(weekStart) && !date.isAfter(weekEnd);
     }
 
     /**

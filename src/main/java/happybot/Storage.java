@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -23,10 +24,10 @@ public class Storage {
     private static final String TASK_TYPE_DEADLINE = "D";
     private static final String TASK_TYPE_EVENT = "E";
 
-    /** Number of fields a saved line holds for each task type. */
-    private static final int FIELD_COUNT_TODO = 3;
-    private static final int FIELD_COUNT_DEADLINE = 4;
-    private static final int FIELD_COUNT_EVENT = 5;
+    /** Number of fields in the older storage format for each task type. */
+    private static final int LEGACY_FIELD_COUNT_TODO = 3;
+    private static final int LEGACY_FIELD_COUNT_DEADLINE = 4;
+    private static final int LEGACY_FIELD_COUNT_EVENT = 5;
 
     /** Text placed between the fields of a saved task line. */
     private static final String FIELD_SEPARATOR = " | ";
@@ -39,6 +40,9 @@ public class Storage {
 
     /** Completion field value written for a task that is not done. */
     private static final String COMPLETION_STATUS_NOT_DONE = "0";
+
+    /** Completion date used when no date was recorded for a task. */
+    private static final String UNKNOWN_COMPLETION_DATE = "-";
 
     private final Path filePath;
 
@@ -136,20 +140,24 @@ public class Storage {
      */
     private String formatTask(Task task) {
         String completionStatus = task.isDone() ? COMPLETION_STATUS_DONE : COMPLETION_STATUS_NOT_DONE;
+        String completionDate = task.getCompletionDate() == null
+                ? UNKNOWN_COMPLETION_DATE
+                : task.getCompletionDate().toString();
 
         if (task instanceof ToDo) {
-            return String.join(FIELD_SEPARATOR, TASK_TYPE_TODO, completionStatus, task.getDescription());
+            return String.join(FIELD_SEPARATOR, TASK_TYPE_TODO, completionStatus,
+                    task.getDescription(), completionDate);
         }
 
         if (task instanceof Deadline deadline) {
             return String.join(FIELD_SEPARATOR, TASK_TYPE_DEADLINE, completionStatus,
-                    deadline.getDescription(), deadline.getDueDateTime().toString());
+                    deadline.getDescription(), deadline.getDueDateTime().toString(), completionDate);
         }
 
         if (task instanceof Event event) {
             return String.join(FIELD_SEPARATOR, TASK_TYPE_EVENT, completionStatus,
                     event.getDescription(), event.getStartTime().toString(),
-                    event.getEndTime().toString());
+                    event.getEndTime().toString(), completionDate);
         }
 
         throw new IllegalArgumentException("Unsupported task type.");
@@ -161,26 +169,31 @@ public class Storage {
      * @param taskLine The saved line to parse.
      * @return The task described by the line.
      * @throws IllegalArgumentException If the line does not follow the storage format.
-     * @throws DateTimeParseException If a date field is not a date and time in ISO form.
+     * @throws DateTimeParseException If a date field is not in its required ISO form.
      */
     private Task parseTask(String taskLine) {
-        String[] fields = taskLine.split(FIELD_SEPARATOR_REGEX);
+        // Keeping trailing empty fields lets validation reject a blank completion-date field.
+        String[] fields = taskLine.split(FIELD_SEPARATOR_REGEX, -1);
         checkFieldsAreFilled(fields, taskLine);
 
         String taskType = fields[0];
         Task task;
+        int legacyFieldCount;
 
         switch (taskType) {
             case TASK_TYPE_TODO:
-                checkFieldCount(fields, FIELD_COUNT_TODO, taskLine);
+                legacyFieldCount = LEGACY_FIELD_COUNT_TODO;
+                checkFieldCount(fields, legacyFieldCount, taskLine);
                 task = new ToDo(fields[2]);
                 break;
             case TASK_TYPE_DEADLINE:
-                checkFieldCount(fields, FIELD_COUNT_DEADLINE, taskLine);
+                legacyFieldCount = LEGACY_FIELD_COUNT_DEADLINE;
+                checkFieldCount(fields, legacyFieldCount, taskLine);
                 task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
                 break;
             case TASK_TYPE_EVENT:
-                checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
+                legacyFieldCount = LEGACY_FIELD_COUNT_EVENT;
+                checkFieldCount(fields, legacyFieldCount, taskLine);
                 task = new Event(LocalDateTime.parse(fields[3]),
                         LocalDateTime.parse(fields[4]), fields[2]);
                 break;
@@ -188,23 +201,25 @@ public class Storage {
                 throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
         }
 
-        if (parseCompletionStatus(fields[1], taskLine)) {
-            task.markAsDone();
+        boolean isDone = parseCompletionStatus(fields[1], taskLine);
+        LocalDate completionDate = parseCompletionDate(fields, legacyFieldCount, isDone, taskLine);
+        if (isDone) {
+            task.markAsDone(completionDate);
         }
 
         return task;
     }
 
     /**
-     * Verifies that a saved line was split into the number of fields its task type requires.
+     * Verifies that a saved line uses the legacy field count or that count plus a completion date.
      *
      * @param fields The fields parsed from the line.
-     * @param expectedCount The number of fields the task type requires.
+     * @param legacyFieldCount The number of fields the older format uses for this task type.
      * @param taskLine The original line, included in the error message.
      * @throws IllegalArgumentException If the line holds the wrong number of fields.
      */
-    private void checkFieldCount(String[] fields, int expectedCount, String taskLine) {
-        if (fields.length != expectedCount) {
+    private void checkFieldCount(String[] fields, int legacyFieldCount, String taskLine) {
+        if (fields.length != legacyFieldCount && fields.length != legacyFieldCount + 1) {
             throw new IllegalArgumentException("Wrong number of fields in data file: " + taskLine);
         }
     }
@@ -217,7 +232,7 @@ public class Storage {
      * @throws IllegalArgumentException If a field is missing or blank.
      */
     private void checkFieldsAreFilled(String[] fields, String taskLine) {
-        if (fields.length < FIELD_COUNT_TODO) {
+        if (fields.length < LEGACY_FIELD_COUNT_TODO) {
             throw new IllegalArgumentException("Incomplete task in data file: " + taskLine);
         }
 
@@ -226,6 +241,35 @@ public class Storage {
                 throw new IllegalArgumentException("Blank field in data file: " + taskLine);
             }
         }
+    }
+
+    /**
+     * Returns the completion date in an extended storage line, if one was recorded.
+     *
+     * @param fields The fields parsed from the saved line.
+     * @param legacyFieldCount The field count used before completion dates were added.
+     * @param isDone Whether the task is marked as completed.
+     * @param taskLine The original line, included in an invalid-data error message.
+     * @return The recorded completion date, or null for legacy or unknown dates.
+     * @throws IllegalArgumentException If an incomplete task has a completion date.
+     * @throws DateTimeParseException If a non-placeholder completion date is unreadable.
+     */
+    private LocalDate parseCompletionDate(String[] fields, int legacyFieldCount, boolean isDone,
+                                          String taskLine) {
+        if (fields.length == legacyFieldCount) {
+            return null;
+        }
+
+        String completionDateText = fields[legacyFieldCount];
+        if (completionDateText.equals(UNKNOWN_COMPLETION_DATE)) {
+            return null;
+        }
+
+        if (!isDone) {
+            throw new IllegalArgumentException("Incomplete task has a completion date: " + taskLine);
+        }
+
+        return LocalDate.parse(completionDateText);
     }
 
     /**

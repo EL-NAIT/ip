@@ -33,6 +33,9 @@ public class Parser {
     /** Usage message for the command that finds tasks by keyword. */
     private static final String FIND_USAGE = "Use: find <keyword>, such as find book.";
 
+    /** Usage message for the command that displays task statistics. */
+    private static final String STATS_USAGE = "Use: stats.";
+
     /** Text that separates a deadline description from its due date. */
     private static final String DEADLINE_MARKER = " /by ";
 
@@ -227,6 +230,18 @@ public class Parser {
         }
 
         return keyword;
+    }
+
+    /**
+     * Rejects arguments supplied to the stats command.
+     *
+     * @param body The command text after the command word.
+     * @throws HappyBotException If any non-whitespace argument was supplied.
+     */
+    public static void validateStatsCommand(String body) throws HappyBotException {
+        if (!body.isBlank()) {
+            throw new HappyBotException(STATS_USAGE);
+        }
     }
 
     /**

@@ -38,6 +38,19 @@ by hand from a scratch directory holding a `../../data/HappyBot.txt`:
 Both notices appear between the welcome message and the first command, inside
 their own pair of divider lines.
 
+### Statistics checks that stay manual
+
+The runner starts each case with an empty data file and cannot freeze the system date, so the
+following current-week boundary and saved-data cases are checked manually:
+
+- mark one task on Monday and another on Sunday, then confirm that both appear in the current
+  week's completed counts;
+- confirm that a task marked done before Monday is not included;
+- restart HappyBot after marking a task done during the week and confirm that `stats` still
+  counts it; and
+- load a legacy completed line such as `T | 1 | old task` and confirm it remains completed but
+  is not counted as completed this week.
+
 ## Test cases
 
 ### TC-01: Exit the program
@@ -1058,6 +1071,119 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Oops! Use: find <keyword>, such as find book.
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-23: Display current-week statistics
+
+**Aim:** Confirm that stats counts current-session completions by task type and reports no
+uncompleted deadline when every deadline in the list is completed.
+
+#### Inputs
+
+```text
+todo read book
+deadline return book /by 2019-12-02
+event orientation /from 2019-12-01 /to 2019-12-03
+mark 1
+mark 2
+mark 3
+stats
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [T][ ] read book
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [D][ ] return book (by: Dec 02 2019 12:00AM)
+ Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+ Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Nice! I've marked this task as done:
+   [T][X] read book
+____________________________________________________________
+____________________________________________________________
+ Nice! I've marked this task as done:
+   [D][X] return book (by: Dec 02 2019 12:00AM)
+____________________________________________________________
+____________________________________________________________
+ Nice! I've marked this task as done:
+   [E][X] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+____________________________________________________________
+____________________________________________________________
+ Here are your statistics for this week:
+ Total tasks: 3
+ Completed this week: 3
+   To-dos: 1
+   Deadlines: 1
+   Events: 1
+ Uncompleted deadlines due this week: 0
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-24: Reject invalid statistics commands
+
+**Aim:** Confirm that stats accepts no arguments and reports a usage error when an argument is
+provided.
+
+#### Inputs
+
+```text
+stats
+stats week
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Here are your statistics for this week:
+ Total tasks: 0
+ Completed this week: 0
+   To-dos: 0
+   Deadlines: 0
+   Events: 0
+ Uncompleted deadlines due this week: 0
+____________________________________________________________
+____________________________________________________________
+ Oops! Use: stats.
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!

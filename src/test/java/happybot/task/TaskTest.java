@@ -2,7 +2,10 @@ package happybot.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 
@@ -19,29 +22,32 @@ public class TaskTest {
     public void markAsDone_notDoneTask_taskBecomesDone() {
         Task task = new Task("read book");
 
-        task.markAsDone();
+        task.markAsDone(LocalDate.of(2026, 9, 16));
 
         assertTrue(task.isDone());
+        assertEquals(LocalDate.of(2026, 9, 16), task.getCompletionDate());
     }
 
     @Test
     public void markAsDone_alreadyDoneTask_taskStaysDone() {
         Task task = new Task("read book");
-        task.markAsDone();
+        task.markAsDone(LocalDate.of(2026, 9, 16));
 
-        task.markAsDone();
+        task.markAsDone(LocalDate.of(2026, 9, 17));
 
         assertTrue(task.isDone());
+        assertEquals(LocalDate.of(2026, 9, 16), task.getCompletionDate());
     }
 
     @Test
     public void unmarkAsDone_doneTask_taskBecomesNotDone() {
         Task task = new Task("read book");
-        task.markAsDone();
+        task.markAsDone(LocalDate.of(2026, 9, 16));
 
         task.unmarkAsDone();
 
         assertFalse(task.isDone());
+        assertNull(task.getCompletionDate());
     }
 
     @Test
@@ -51,6 +57,17 @@ public class TaskTest {
         task.unmarkAsDone();
 
         assertFalse(task.isDone());
+        assertNull(task.getCompletionDate());
+    }
+
+    @Test
+    public void markAsDone_noDate_completionDateUnknown() {
+        Task task = new Task("read book");
+
+        task.markAsDone();
+
+        assertTrue(task.isDone());
+        assertNull(task.getCompletionDate());
     }
 
     @Test
@@ -61,7 +78,7 @@ public class TaskTest {
     @Test
     public void toString_doneTask_statusBoxHoldsCross() {
         Task task = new Task("read book");
-        task.markAsDone();
+        task.markAsDone(LocalDate.of(2026, 9, 16));
 
         assertEquals("[X] read book", task.toString());
     }
