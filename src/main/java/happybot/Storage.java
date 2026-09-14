@@ -28,6 +28,13 @@ public class Storage {
     private static final int FIELD_COUNT_DEADLINE = 4;
     private static final int FIELD_COUNT_EVENT = 5;
 
+    /** Positions of the fields in a saved task line. */
+    private static final int TASK_TYPE_FIELD_INDEX = 0;
+    private static final int COMPLETION_STATUS_FIELD_INDEX = 1;
+    private static final int DESCRIPTION_FIELD_INDEX = 2;
+    private static final int FIRST_DATE_TIME_FIELD_INDEX = 3;
+    private static final int SECOND_DATE_TIME_FIELD_INDEX = 4;
+
     /** Text placed between the fields of a saved task line. */
     private static final String FIELD_SEPARATOR = " | ";
 
@@ -167,37 +174,47 @@ public class Storage {
         String[] fields = taskLine.split(FIELD_SEPARATOR_REGEX);
         checkFieldsAreFilled(fields, taskLine);
 
-        String taskType = fields[0];
-        Task task;
+        Task task = createTask(fields, taskLine);
 
-        switch (taskType) {
-            case TASK_TYPE_TODO:
-                checkFieldCount(fields, FIELD_COUNT_TODO, taskLine);
-                task = new ToDo(fields[2]);
-                break;
-            case TASK_TYPE_DEADLINE:
-                checkFieldCount(fields, FIELD_COUNT_DEADLINE, taskLine);
-                task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
-                break;
-            case TASK_TYPE_EVENT:
-                checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
-                LocalDateTime startTime = LocalDateTime.parse(fields[3]);
-                LocalDateTime endTime = LocalDateTime.parse(fields[4]);
-                if (!startTime.isBefore(endTime)) {
-                    throw new IllegalArgumentException("Event end time must be after its start time: "
-                            + taskLine);
-                }
-                task = new Event(startTime, endTime, fields[2]);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
-        }
-
-        if (parseCompletionStatus(fields[1], taskLine)) {
+        if (parseCompletionStatus(fields[COMPLETION_STATUS_FIELD_INDEX], taskLine)) {
             task.markAsDone();
         }
 
         return task;
+    }
+
+    /**
+     * Creates a task from the type-specific fields of a saved line.
+     *
+     * @param fields The fields parsed from the line.
+     * @param taskLine The original line, included in the error message.
+     * @return The task described by the type-specific fields.
+     * @throws IllegalArgumentException If the line has an unknown type or the wrong field count.
+     * @throws DateTimeParseException If a date field is not a date and time in ISO form.
+     */
+    private Task createTask(String[] fields, String taskLine) {
+        String taskType = fields[TASK_TYPE_FIELD_INDEX];
+
+        return switch (taskType) {
+            case TASK_TYPE_TODO:
+                checkFieldCount(fields, FIELD_COUNT_TODO, taskLine);
+                yield new ToDo(fields[DESCRIPTION_FIELD_INDEX]);
+            case TASK_TYPE_DEADLINE:
+                checkFieldCount(fields, FIELD_COUNT_DEADLINE, taskLine);
+                yield new Deadline(fields[DESCRIPTION_FIELD_INDEX],
+                        LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]));
+            case TASK_TYPE_EVENT:
+                checkFieldCount(fields, FIELD_COUNT_EVENT, taskLine);
+                LocalDateTime startTime = LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]);
+                LocalDateTime endTime = LocalDateTime.parse(fields[SECOND_DATE_TIME_FIELD_INDEX]);
+                if (!startTime.isBefore(endTime)) {
+                    throw new IllegalArgumentException("Event end time must be after its start time: "
+                            + taskLine);
+                }
+                yield new Event(startTime, endTime, fields[DESCRIPTION_FIELD_INDEX]);
+            default:
+                throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
+        };
     }
 
     /**
