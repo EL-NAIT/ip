@@ -2,6 +2,7 @@ package happybot;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.LocalDate;
 
 import happybot.task.DatedTask;
@@ -24,6 +25,9 @@ public class HappyBot {
     /** Storage that loads the saved tasks at startup and saves them after every change. */
     private final Storage storage;
 
+    /** Clock used to record task completions and identify the current calendar week. */
+    private final Clock clock;
+
     /** Tasks held by this HappyBot for the length of the session. */
     private TaskList tasks;
 
@@ -34,7 +38,7 @@ public class HappyBot {
      * Creates a HappyBot that uses the default data file.
      */
     public HappyBot() {
-        this(DATA_FILE_PATH);
+        this(DATA_FILE_PATH, Clock.systemDefaultZone());
     }
 
     /**
@@ -43,8 +47,22 @@ public class HappyBot {
      * @param filePath The location of the task data file.
      */
     public HappyBot(Path filePath) {
+        this(filePath, Clock.systemDefaultZone());
+    }
+
+    /**
+     * Creates a HappyBot that uses the specified data file and clock.
+     *
+     * <p>The clock is supplied by tests to make the week boundaries predictable. Production
+     * constructors use the system-default clock.
+     *
+     * @param filePath The location of the task data file.
+     * @param clock The clock used for the current local date.
+     */
+    HappyBot(Path filePath, Clock clock) {
         this.ui = new Ui();
         this.storage = new Storage(filePath);
+        this.clock = clock;
         this.tasks = new TaskList();
         this.startupNotice = loadSavedTasks();
     }
@@ -106,7 +124,7 @@ public class HappyBot {
         }
 
         Task taskToMark = tasks.getTask(Parser.parseTaskNumber(body));
-        taskToMark.markAsDone();
+        taskToMark.markAsDone(LocalDate.now(clock));
         return saveTasks() + ui.formatMarkedTask(taskToMark);
     }
 
@@ -165,6 +183,17 @@ public class HappyBot {
     }
 
     /**
+     * Returns the current week's task statistics.
+     *
+     * @param body The command text after the command word.
+     * @throws HappyBotException If the command holds an unexpected argument.
+     */
+    private String getStatistics(String body) throws HappyBotException {
+        Parser.validateStatsCommand(body);
+        return ui.formatStatistics(tasks.getStatistics(LocalDate.now(clock)));
+    }
+
+    /**
      * Returns the welcome message and any warning raised while loading saved tasks.
      *
      * @return The message to show when a graphical session starts.
@@ -196,6 +225,7 @@ public class HappyBot {
                 case "delete" -> deleteTask(body);
                 case "due" -> getDeadlinesDueOn(Parser.parseDueDate(body));
                 case "find" -> getMatchingTasks(Parser.parseKeyword(body));
+                case "stats" -> getStatistics(body);
                 case "todo" -> addTask(Parser.parseToDo(body));
                 case "deadline" -> addTask(Parser.parseDeadline(body));
                 case "event" -> addTask(Parser.parseEvent(body));

@@ -1,28 +1,37 @@
 # HappyBot User Guide
 
-// Product screenshot goes here
+HappyBot manages todos, deadlines, and events through a chat-style command interface.
 
-// Product intro goes here
+## Viewing statistics
 
-## Adding deadlines
+Use `stats` to see a compact summary of the current Monday-to-Sunday week.
 
-// Describe the action and its outcome.
-
-// Give examples of usage
-
-Example: `keyword (optional arguments)`
-
-// A description of the expected outcome goes here
-
-```
-expected output
+```text
+stats
 ```
 
-## Feature ABC
+The reply shows the total number of tasks in the list, tasks completed during the current week
+by type, and uncompleted deadlines due during the same week.
 
-// Feature details
+```text
+ Here are your statistics for this week:
+ Total tasks: 4
+ Completed this week: 3
+   To-dos: 1
+   Deadlines: 1
+   Events: 1
+ Uncompleted deadlines due this week: 1
+```
 
+HappyBot records the calendar day when a task is marked as done. Marking an already completed
+task does not change that date. Unmarking clears it, and marking the task done again records the
+new day. Completion times are not recorded.
 
-## Feature XYZ
+Tasks completed before completion-date tracking was introduced remain completed but are not
+included in the current week's completed-task count.
 
-// Feature details
+`stats` accepts no arguments. For example, `stats week` produces:
+
+```text
+ Oops! Use: stats.
+```

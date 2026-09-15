@@ -160,6 +160,22 @@ public class Ui {
     }
 
     /**
+     * Formats the compact statistics for the current week.
+     *
+     * @param statistics The task counts to show.
+     * @return The formatted statistics reply.
+     */
+    String formatStatistics(TaskStatistics statistics) {
+        return " Here are your statistics for this week:\n"
+                + " Total tasks: " + statistics.getTotalTaskCount() + "\n"
+                + " Completed this week: " + statistics.getCompletedTaskCount() + "\n"
+                + "   To-dos: " + statistics.getCompletedToDoCount() + "\n"
+                + "   Deadlines: " + statistics.getCompletedDeadlineCount() + "\n"
+                + "   Events: " + statistics.getCompletedEventCount() + "\n"
+                + " Uncompleted deadlines due this week: " + statistics.getUncompletedDeadlineCount();
+    }
+
+    /**
      * Formats the confirmation that a task was added.
      *
      * @param addedTask The task that was added.

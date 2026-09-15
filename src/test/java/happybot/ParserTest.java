@@ -23,6 +23,8 @@ public class ParserTest {
 
     private static final String FIND_USAGE = "Use: find <keyword>, such as find book.";
 
+    private static final String STATS_USAGE = "Use: stats.";
+
     private static final String DATE_FORMAT_HINT =
             "Please write dates as yyyy-MM-dd or d/M/yyyy, with an optional 24-hour time that "
                     + "defaults to 0000, such as 2019-12-02 1800.";
@@ -473,6 +475,26 @@ public class ParserTest {
         HappyBotException e = assertThrows(HappyBotException.class, () -> Parser.parseKeyword("    "));
 
         assertEquals(FIND_USAGE, e.getMessage());
+    }
+
+    // ==================== validateStatsCommand ====================
+
+    @Test
+    public void validateStatsCommand_noArgument_noExceptionThrown() throws HappyBotException {
+        Parser.validateStatsCommand("");
+    }
+
+    @Test
+    public void validateStatsCommand_spacesOnly_noExceptionThrown() throws HappyBotException {
+        Parser.validateStatsCommand("   ");
+    }
+
+    @Test
+    public void validateStatsCommand_argumentGiven_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.validateStatsCommand("week"));
+
+        assertEquals(STATS_USAGE, e.getMessage());
     }
 
     // ==================== parseDueDate ====================

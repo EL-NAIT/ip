@@ -305,4 +305,64 @@ public class TaskListTest {
 
         assertTrue(taskList.findDeadlinesDueOn(LocalDate.of(2019, 12, 2)).isEmpty());
     }
+
+    // ==================== getStatistics ====================
+
+    @Test
+    public void getStatistics_currentWeek_tasksCountedByTypeAndDeadlineDate() {
+        LocalDate currentDate = LocalDate.of(2026, 9, 16);
+        TaskList taskList = new TaskList();
+        ToDo completedToDo = new ToDo("read book");
+        Deadline completedDeadline = new Deadline("submit report",
+                LocalDateTime.of(2026, 9, 18, 18, 0));
+        Event completedLastWeek = new Event(LocalDateTime.of(2026, 9, 14, 9, 0),
+                LocalDateTime.of(2026, 9, 14, 10, 0), "meeting");
+        ToDo legacyCompletedToDo = new ToDo("old task");
+        Deadline mondayDeadline = new Deadline("start task", LocalDateTime.of(2026, 9, 14, 9, 0));
+        Deadline sundayDeadline = new Deadline("finish task", LocalDateTime.of(2026, 9, 20, 23, 59));
+        Deadline nextWeekDeadline = new Deadline("next task", LocalDateTime.of(2026, 9, 21, 9, 0));
+
+        completedToDo.markAsDone(LocalDate.of(2026, 9, 14));
+        completedDeadline.markAsDone(LocalDate.of(2026, 9, 20));
+        completedLastWeek.markAsDone(LocalDate.of(2026, 9, 13));
+        legacyCompletedToDo.markAsDone();
+        taskList.add(completedToDo);
+        taskList.add(completedDeadline);
+        taskList.add(completedLastWeek);
+        taskList.add(legacyCompletedToDo);
+        taskList.add(mondayDeadline);
+        taskList.add(sundayDeadline);
+        taskList.add(nextWeekDeadline);
+
+        TaskStatistics statistics = taskList.getStatistics(currentDate);
+
+        assertEquals(7, statistics.getTotalTaskCount());
+        assertEquals(2, statistics.getCompletedTaskCount());
+        assertEquals(1, statistics.getCompletedToDoCount());
+        assertEquals(1, statistics.getCompletedDeadlineCount());
+        assertEquals(0, statistics.getCompletedEventCount());
+        assertEquals(2, statistics.getUncompletedDeadlineCount());
+    }
+
+    @Test
+    public void getStatistics_weekCrossesYearBoundary_boundaryDatesIncluded() {
+        TaskList taskList = new TaskList();
+        ToDo mondayTask = new ToDo("start year");
+        Event sundayTask = new Event(LocalDateTime.of(2026, 1, 4, 9, 0),
+                LocalDateTime.of(2026, 1, 4, 10, 0), "finish year");
+        Deadline sundayDeadline = new Deadline("pay bill", LocalDateTime.of(2026, 1, 4, 23, 59));
+
+        mondayTask.markAsDone(LocalDate.of(2025, 12, 29));
+        sundayTask.markAsDone(LocalDate.of(2026, 1, 4));
+        taskList.add(mondayTask);
+        taskList.add(sundayTask);
+        taskList.add(sundayDeadline);
+
+        TaskStatistics statistics = taskList.getStatistics(LocalDate.of(2026, 1, 1));
+
+        assertEquals(2, statistics.getCompletedTaskCount());
+        assertEquals(1, statistics.getCompletedToDoCount());
+        assertEquals(1, statistics.getCompletedEventCount());
+        assertEquals(1, statistics.getUncompletedDeadlineCount());
+    }
 }
