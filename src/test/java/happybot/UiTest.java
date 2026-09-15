@@ -136,10 +136,10 @@ public class UiTest {
         assertEquals(" Heads up! I could not save your tasks to data/HappyBot.txt.",
                 ui.formatSavingError(filePath));
         assertEquals(" Heads up! Your task list at data/HappyBot.txt is already open in another HappyBot session."
-                        + " Close the other session and try again.",
+                        + " Close the other session, then restart this HappyBot session.",
                 ui.formatDataFileInUse(filePath));
         assertEquals("Your task list at data/HappyBot.txt is already open in another HappyBot session."
-                        + " Close the other session and try again.",
+                        + " Close the other session, then restart this HappyBot session.",
                 ui.getDataFileInUseMessage(filePath));
         assertEquals(" Oops! bad command", ui.formatError("bad command"));
     }

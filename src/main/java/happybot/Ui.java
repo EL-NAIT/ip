@@ -256,7 +256,8 @@ public class Ui {
      */
     String formatDataFileInUse(Path filePath) {
         return " Heads up! Your task list at " + filePath
-                + " is already open in another HappyBot session. Close the other session and try again.";
+                + " is already open in another HappyBot session. Close the other session, then restart this"
+                + " HappyBot session.";
     }
 
     /**
@@ -267,7 +268,8 @@ public class Ui {
      */
     String getDataFileInUseMessage(Path filePath) {
         return "Your task list at " + filePath
-                + " is already open in another HappyBot session. Close the other session and try again.";
+                + " is already open in another HappyBot session. Close the other session, then restart this"
+                + " HappyBot session.";
     }
 
     /**

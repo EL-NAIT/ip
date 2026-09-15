@@ -43,7 +43,8 @@ The data-file lock also needs a manual two-process check:
 - start one HappyBot console session and leave it running;
 - start a second session from the same working directory; and
 - confirm that the second session reports that the task list is open in another HappyBot session,
-  asks the user to close the other session, and rejects task commands without crashing.
+  tells the user to close the other session and restart this session, and rejects task commands
+  without crashing.
 
 ### Statistics checks that stay manual
 

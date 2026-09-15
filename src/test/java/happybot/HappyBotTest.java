@@ -191,7 +191,8 @@ public class HappyBotTest {
         try {
             assertTrue(secondSession.getWelcomeMessage().contains("already open in another HappyBot session"));
             assertEquals(" Oops! Your task list at " + dataFile
-                            + " is already open in another HappyBot session. Close the other session and try again.",
+                            + " is already open in another HappyBot session. Close the other session, then"
+                            + " restart this HappyBot session.",
                     secondSession.getResponse("todo read book"));
         } finally {
             secondSession.close();
