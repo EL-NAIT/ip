@@ -162,6 +162,27 @@ public class StorageTest {
     }
 
     @Test
+    public void loadTasks_everySupportedStoredType_typesAndDetailsRestored() throws IOException {
+        writeDataFile("T | 0 | read book", "D | 1 | return book | 2019-12-02T18:00",
+                "E | 0 | orientation | 2019-12-01T09:00 | 2019-12-03T17:00");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        Task todo = assertInstanceOf(ToDo.class, loadedTasks.get(0));
+        assertEquals("read book", todo.getDescription());
+        Deadline deadline = assertInstanceOf(Deadline.class, loadedTasks.get(1));
+        assertEquals("return book", deadline.getDescription());
+        assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), deadline.getDueDateTime());
+        assertTrue(deadline.isDone());
+
+        Event event = assertInstanceOf(Event.class, loadedTasks.get(2));
+        assertEquals("orientation", event.getDescription());
+        assertEquals(LocalDateTime.of(2019, 12, 1, 9, 0), event.getStartTime());
+        assertEquals(LocalDateTime.of(2019, 12, 3, 17, 0), event.getEndTime());
+    }
+
+    @Test
     public void loadTasks_legacyCompletedTask_completionDateUnknown() throws IOException {
         writeDataFile("T | 1 | read book");
         Storage storage = new Storage(dataFile());
@@ -268,6 +289,20 @@ public class StorageTest {
 
         assertTrue(storage.loadTasks().isEmpty());
         assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_eventEndingAtOrBeforeStart_linesSkippedAndCounted() throws IOException {
+        writeDataFile("E | 0 | meeting | 2019-12-01T09:00 | 2019-12-01T09:00",
+                "E | 0 | review | 2019-12-02T09:00 | 2019-12-02T08:00",
+                "E | 0 | lecture | 2019-12-03T09:00 | 2019-12-03T10:00");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        assertEquals(1, loadedTasks.size());
+        assertEquals("lecture", loadedTasks.get(0).getDescription());
+        assertEquals(2, storage.getSkippedLineCount());
     }
 
     @Test

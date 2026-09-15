@@ -219,8 +219,11 @@ public class TaskList {
      * @throws HappyBotException If no task holds that number.
      */
     private void checkTaskNumber(int taskNumber) throws HappyBotException {
-        if (taskNumber < 1 || taskNumber > tasks.size()) {
+        boolean isTaskNumberInRange = taskNumber >= 1 && taskNumber <= tasks.size();
+        if (!isTaskNumberInRange) {
             throw new HappyBotException("Please choose a valid task number.");
         }
+
+        assert isTaskNumberInRange : "A task number must identify an existing task.";
     }
 }

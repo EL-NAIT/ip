@@ -11,16 +11,21 @@ public class DialogBox extends HBox {
     private static final String BOT_BADGE = "HB";
     private static final String USER_BADGE = "YOU";
 
-    private DialogBox(String text, boolean isUser) {
+    private enum DialogRole {
+        USER,
+        BOT
+    }
+
+    private DialogBox(String text, DialogRole dialogRole) {
         Label message = new Label(text.stripLeading());
-        Label badge = new Label(isUser ? USER_BADGE : BOT_BADGE);
+        Label badge = new Label(dialogRole == DialogRole.USER ? USER_BADGE : BOT_BADGE);
 
         message.setWrapText(true);
         message.setMaxWidth(330);
         message.getStyleClass().add("message-bubble");
         badge.getStyleClass().add("speaker-badge");
 
-        if (isUser) {
+        if (dialogRole == DialogRole.USER) {
             setAlignment(Pos.TOP_RIGHT);
             message.getStyleClass().add("user-message");
             badge.getStyleClass().add("user-badge");
@@ -40,7 +45,7 @@ public class DialogBox extends HBox {
      * @return The user dialog box.
      */
     public static DialogBox getUserDialog(String text) {
-        return new DialogBox(text, true);
+        return new DialogBox(text, DialogRole.USER);
     }
 
     /**
@@ -50,6 +55,6 @@ public class DialogBox extends HBox {
      * @return The HappyBot dialog box.
      */
     public static DialogBox getBotDialog(String text) {
-        return new DialogBox(text, false);
+        return new DialogBox(text, DialogRole.BOT);
     }
 }

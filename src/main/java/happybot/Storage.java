@@ -29,6 +29,13 @@ public class Storage {
     private static final int LEGACY_FIELD_COUNT_DEADLINE = 4;
     private static final int LEGACY_FIELD_COUNT_EVENT = 5;
 
+    /** Positions of the fields in a saved task line. */
+    private static final int TASK_TYPE_FIELD_INDEX = 0;
+    private static final int COMPLETION_STATUS_FIELD_INDEX = 1;
+    private static final int DESCRIPTION_FIELD_INDEX = 2;
+    private static final int FIRST_DATE_TIME_FIELD_INDEX = 3;
+    private static final int SECOND_DATE_TIME_FIELD_INDEX = 4;
+
     /** Text placed between the fields of a saved task line. */
     private static final String FIELD_SEPARATOR = " | ";
 
@@ -176,38 +183,66 @@ public class Storage {
         String[] fields = taskLine.split(FIELD_SEPARATOR_REGEX, -1);
         checkFieldsAreFilled(fields, taskLine);
 
-        String taskType = fields[0];
-        Task task;
-        int legacyFieldCount;
+        String taskType = fields[TASK_TYPE_FIELD_INDEX];
+        int legacyFieldCount = getLegacyFieldCount(taskType, taskLine);
+        checkFieldCount(fields, legacyFieldCount, taskLine);
+        Task task = createTask(fields, taskLine);
 
-        switch (taskType) {
-            case TASK_TYPE_TODO:
-                legacyFieldCount = LEGACY_FIELD_COUNT_TODO;
-                checkFieldCount(fields, legacyFieldCount, taskLine);
-                task = new ToDo(fields[2]);
-                break;
-            case TASK_TYPE_DEADLINE:
-                legacyFieldCount = LEGACY_FIELD_COUNT_DEADLINE;
-                checkFieldCount(fields, legacyFieldCount, taskLine);
-                task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
-                break;
-            case TASK_TYPE_EVENT:
-                legacyFieldCount = LEGACY_FIELD_COUNT_EVENT;
-                checkFieldCount(fields, legacyFieldCount, taskLine);
-                task = new Event(LocalDateTime.parse(fields[3]),
-                        LocalDateTime.parse(fields[4]), fields[2]);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
-        }
-
-        boolean isDone = parseCompletionStatus(fields[1], taskLine);
+        boolean isDone = parseCompletionStatus(fields[COMPLETION_STATUS_FIELD_INDEX], taskLine);
         LocalDate completionDate = parseCompletionDate(fields, legacyFieldCount, isDone, taskLine);
         if (isDone) {
             task.markAsDone(completionDate);
         }
 
         return task;
+    }
+
+    /**
+     * Creates a task from the type-specific fields of a saved line.
+     *
+     * @param fields The fields parsed from the line.
+     * @param taskLine The original line, included in the error message.
+     * @return The task described by the type-specific fields.
+     * @throws IllegalArgumentException If the line has an unknown task type.
+     * @throws DateTimeParseException If a date field is not a date and time in ISO form.
+     */
+    private Task createTask(String[] fields, String taskLine) {
+        String taskType = fields[TASK_TYPE_FIELD_INDEX];
+
+        return switch (taskType) {
+            case TASK_TYPE_TODO:
+                yield new ToDo(fields[DESCRIPTION_FIELD_INDEX]);
+            case TASK_TYPE_DEADLINE:
+                yield new Deadline(fields[DESCRIPTION_FIELD_INDEX],
+                        LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]));
+            case TASK_TYPE_EVENT:
+                LocalDateTime startTime = LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]);
+                LocalDateTime endTime = LocalDateTime.parse(fields[SECOND_DATE_TIME_FIELD_INDEX]);
+                if (!startTime.isBefore(endTime)) {
+                    throw new IllegalArgumentException("Event end time must be after its start time: "
+                            + taskLine);
+                }
+                yield new Event(startTime, endTime, fields[DESCRIPTION_FIELD_INDEX]);
+            default:
+                throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
+        };
+    }
+
+    /**
+     * Returns the field count used by a task type before completion dates were added.
+     *
+     * @param taskType The task-type field read from the line.
+     * @param taskLine The original line, included in an invalid-data error message.
+     * @return The number of fields used by the older version of this task type.
+     * @throws IllegalArgumentException If the line holds an unsupported task type.
+     */
+    private int getLegacyFieldCount(String taskType, String taskLine) {
+        return switch (taskType) {
+            case TASK_TYPE_TODO -> LEGACY_FIELD_COUNT_TODO;
+            case TASK_TYPE_DEADLINE -> LEGACY_FIELD_COUNT_DEADLINE;
+            case TASK_TYPE_EVENT -> LEGACY_FIELD_COUNT_EVENT;
+            default -> throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);
+        };
     }
 
     /**

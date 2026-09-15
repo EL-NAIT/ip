@@ -45,6 +45,24 @@ public class HappyBotTest {
     }
 
     @Test
+    public void getResponse_eventStartEqualsEnd_errorReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        String response = happyBot.getResponse("event meeting /from 2019-12-01 /to 2019-12-01");
+
+        assertEquals(" Oops! An event must start before it ends.", response);
+    }
+
+    @Test
+    public void getResponse_eventStartAfterEnd_errorReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        String response = happyBot.getResponse("event meeting /from 2019-12-02 /to 2019-12-01");
+
+        assertEquals(" Oops! An event must start before it ends.", response);
+    }
+
+    @Test
     public void getResponse_byeCommand_goodbyeReturned(@TempDir Path tempDir) {
         HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
 
