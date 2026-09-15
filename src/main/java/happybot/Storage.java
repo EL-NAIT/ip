@@ -1,9 +1,13 @@
 package happybot;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -51,10 +55,20 @@ public class Storage {
     /** Completion date used when no date was recorded for a task. */
     private static final String UNKNOWN_COMPLETION_DATE = "-";
 
+    /** Suffix used for the companion file that coordinates HappyBot sessions. */
+    private static final String LOCK_FILE_SUFFIX = ".lock";
+
     private final Path filePath;
+    private final Path lockFilePath;
 
     /** Number of unreadable lines skipped by the most recent call to loadTasks(). */
     private int skippedLineCount;
+
+    /** Channel that keeps this session's data-file lock alive. */
+    private FileChannel lockChannel;
+
+    /** Exclusive lock held while this HappyBot session owns the data file. */
+    private FileLock dataFileLock;
 
     /**
      * Creates storage that reads and writes the specified file.
@@ -63,6 +77,7 @@ public class Storage {
      */
     public Storage(Path filePath) {
         this.filePath = filePath;
+        this.lockFilePath = filePath.resolveSibling(filePath.getFileName() + LOCK_FILE_SUFFIX);
     }
 
     /**
@@ -81,6 +96,79 @@ public class Storage {
      */
     public Path getFilePath() {
         return filePath;
+    }
+
+    /**
+     * Tries to acquire this process's exclusive lock for the task data file.
+     *
+     * <p>The companion lock file may remain after a session ends, but an operating-system lock
+     * on it is released automatically when its process exits. Its mere presence therefore does
+     * not prevent a later HappyBot session from opening the task data file.
+     *
+     * @return True if this Storage now owns the data file; false if another HappyBot owns it.
+     * @throws IOException If the companion lock file cannot be opened.
+     */
+    public boolean tryAcquireDataFileLock() throws IOException {
+        if (dataFileLock != null && dataFileLock.isValid()) {
+            return true;
+        }
+
+        Path parentDirectory = lockFilePath.getParent();
+        if (parentDirectory != null) {
+            Files.createDirectories(parentDirectory);
+        }
+
+        lockChannel = FileChannel.open(lockFilePath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        try {
+            dataFileLock = lockChannel.tryLock();
+            if (dataFileLock == null) {
+                closeLockChannelQuietly();
+                return false;
+            }
+
+            return true;
+        } catch (OverlappingFileLockException e) {
+            closeLockChannelQuietly();
+            return false;
+        } catch (IOException e) {
+            closeLockChannelQuietly();
+            throw e;
+        }
+    }
+
+    /**
+     * Releases this session's data-file lock.
+     *
+     * @throws IOException If the lock or its channel cannot be closed.
+     */
+    public void releaseDataFileLock() throws IOException {
+        IOException failure = null;
+
+        if (dataFileLock != null) {
+            try {
+                dataFileLock.release();
+            } catch (IOException e) {
+                failure = e;
+            } finally {
+                dataFileLock = null;
+            }
+        }
+
+        if (lockChannel != null) {
+            try {
+                lockChannel.close();
+            } catch (IOException e) {
+                if (failure == null) {
+                    failure = e;
+                }
+            } finally {
+                lockChannel = null;
+            }
+        }
+
+        if (failure != null) {
+            throw failure;
+        }
     }
 
     /**
@@ -130,7 +218,12 @@ public class Storage {
             }
 
             try {
-                tasks.add(parseTask(taskLine));
+                Task parsedTask = parseTask(taskLine);
+                if (containsTaskWithSameDetails(tasks, parsedTask)) {
+                    throw new IllegalArgumentException("Duplicate task in data file: " + taskLine);
+                }
+
+                tasks.add(parsedTask);
             } catch (IllegalArgumentException | DateTimeParseException e) {
                 skippedLineCount++;
             }
@@ -325,5 +418,35 @@ public class Storage {
         }
 
         throw new IllegalArgumentException("Unknown completion status in data file: " + taskLine);
+    }
+
+    /**
+     * Returns whether the supplied tasks already contain one with the same user-facing details.
+     */
+    private static boolean containsTaskWithSameDetails(List<Task> tasks, Task taskToCheck) {
+        for (Task task : tasks) {
+            if (task.hasSameDetails(taskToCheck)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Closes a failed lock-acquisition attempt without hiding the original failure.
+     */
+    private void closeLockChannelQuietly() {
+        if (lockChannel == null) {
+            return;
+        }
+
+        try {
+            lockChannel.close();
+        } catch (IOException e) {
+            // A failed lock attempt has no usable channel to preserve.
+        } finally {
+            lockChannel = null;
+        }
     }
 }

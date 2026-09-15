@@ -34,6 +34,9 @@ public class HappyBot {
     /** Warning about saved data that should be shown after the welcome message, if any. */
     private final String startupNotice;
 
+    /** Whether another HappyBot session has exclusive access to the data file. */
+    private boolean isDataFileInUse;
+
     /**
      * Creates a HappyBot that uses the default data file.
      */
@@ -75,6 +78,11 @@ public class HappyBot {
      */
     private String loadSavedTasks() {
         try {
+            if (!storage.tryAcquireDataFileLock()) {
+                isDataFileInUse = true;
+                return ui.formatDataFileInUse(storage.getFilePath());
+            }
+
             tasks = new TaskList(storage.loadTasks());
             if (storage.getSkippedLineCount() > 0) {
                 return ui.formatSkippedLinesNotice(storage.getSkippedLineCount());
@@ -106,8 +114,9 @@ public class HappyBot {
      * Adds a task, saves the updated list, and returns a confirmation.
      *
      * @param taskToAdd The task to add.
+     * @throws HappyBotException If an equivalent task is already in the list.
      */
-    private String addTask(Task taskToAdd) {
+    private String addTask(Task taskToAdd) throws HappyBotException {
         tasks.add(taskToAdd);
         return saveTasks() + ui.formatAddedTask(taskToAdd, tasks.getSize());
     }
@@ -213,13 +222,22 @@ public class HappyBot {
      * @return HappyBot's response to the command.
      */
     public String getResponse(String userInput) {
-        String command = Parser.parseCommandWord(userInput);
-        String body = Parser.parseCommandBody(userInput);
-
         try {
+            Parser.validateCommandInput(userInput);
+            String command = Parser.parseCommandWord(userInput);
+            String body = Parser.parseCommandBody(userInput);
+
+            if (command.equals("bye")) {
+                Parser.validateByeCommand(body);
+                return ui.getGoodbyeMessage();
+            }
+
+            if (isDataFileInUse) {
+                throw new HappyBotException(ui.getDataFileInUseMessage(storage.getFilePath()));
+            }
+
             return switch (command) {
-                case "bye" -> ui.getGoodbyeMessage();
-                case "list" -> ui.formatTaskList(tasks.getTasks());
+                case "list" -> getTaskList(body);
                 case "mark" -> markTask(body);
                 case "unmark" -> unmarkTask(body);
                 case "delete" -> deleteTask(body);
@@ -233,6 +251,50 @@ public class HappyBot {
             };
         } catch (HappyBotException e) {
             return ui.formatError(e.getMessage());
+        }
+    }
+
+    /**
+     * Returns the full task list after checking that list has no arguments.
+     *
+     * @param body The command text after the command word.
+     * @return The formatted task list.
+     * @throws HappyBotException If the command holds an unexpected argument.
+     */
+    private String getTaskList(String body) throws HappyBotException {
+        Parser.validateListCommand(body);
+        return ui.formatTaskList(tasks.getTasks());
+    }
+
+    /**
+     * Returns whether the supplied command is a valid request to end the session.
+     *
+     * @param userInput The command entered by the user.
+     * @return True only for a bye command with no arguments.
+     */
+    public boolean isExitCommand(String userInput) {
+        try {
+            Parser.validateCommandInput(userInput);
+            String command = Parser.parseCommandWord(userInput);
+            String body = Parser.parseCommandBody(userInput);
+            Parser.validateByeCommand(body);
+            return command.equals("bye");
+        } catch (HappyBotException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Releases resources held for this HappyBot session.
+     *
+     * <p>Failing to release a lock during shutdown must not turn a normal program exit into an
+     * error. The operating system releases the lock when the process ends in that rare case.
+     */
+    public void close() {
+        try {
+            storage.releaseDataFileLock();
+        } catch (IOException e) {
+            // The operating system releases any remaining file lock when HappyBot exits.
         }
     }
 
@@ -251,9 +313,8 @@ public class HappyBot {
         while (isRunning && ui.hasNextCommand()) {
             String userInput = ui.readCommand();
             ui.showDivider();
-            String command = Parser.parseCommandWord(userInput);
 
-            if (command.equals("bye")) {
+            if (isExitCommand(userInput)) {
                 isRunning = false;
             } else {
                 ui.showResponse(getResponse(userInput));
@@ -269,6 +330,11 @@ public class HappyBot {
      * @param args Command-line arguments, which HappyBot does not use.
      */
     public static void main(String[] args) {
-        new HappyBot(DATA_FILE_PATH).run();
+        HappyBot happyBot = new HappyBot(DATA_FILE_PATH);
+        try {
+            happyBot.run();
+        } finally {
+            happyBot.close();
+        }
     }
 }

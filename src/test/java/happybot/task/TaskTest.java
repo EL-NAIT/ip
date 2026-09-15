@@ -3,6 +3,7 @@ package happybot.task;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
@@ -16,6 +17,19 @@ public class TaskTest {
 
         assertEquals("read book", task.getDescription());
         assertFalse(task.isDone());
+    }
+
+    @Test
+    public void constructor_repeatedWhitespace_descriptionNormalized() {
+        Task task = new Task("  read\t\tbook  ");
+
+        assertEquals("read book", task.getDescription());
+    }
+
+    @Test
+    public void constructor_blankOrStorageBreakingDescription_exceptionThrown() {
+        assertThrows(IllegalArgumentException.class, () -> new Task("   "));
+        assertThrows(IllegalArgumentException.class, () -> new Task("read | book"));
     }
 
     @Test

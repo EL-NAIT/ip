@@ -1,6 +1,7 @@
 package happybot.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDateTime;
 
@@ -49,5 +50,10 @@ public class DeadlineTest {
         LocalDateTime dueDateTime = LocalDateTime.of(2019, 12, 2, 18, 0);
 
         assertEquals(dueDateTime, new Deadline("return book", dueDateTime).getDueDateTime());
+    }
+
+    @Test
+    public void constructor_nullDueDateTime_exceptionThrown() {
+        assertThrows(IllegalArgumentException.class, () -> new Deadline("return book", null));
     }
 }

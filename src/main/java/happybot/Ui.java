@@ -249,6 +249,28 @@ public class Ui {
     }
 
     /**
+     * Formats a startup notice that another HappyBot session owns the task data file.
+     *
+     * @param filePath The location of the task data file.
+     * @return The startup notice.
+     */
+    String formatDataFileInUse(Path filePath) {
+        return " Heads up! Your task list at " + filePath
+                + " is already open in another HappyBot session. Close the other session and try again.";
+    }
+
+    /**
+     * Returns the error shown when a command is sent to a session without the data-file lock.
+     *
+     * @param filePath The location of the task data file.
+     * @return The command error message.
+     */
+    String getDataFileInUseMessage(Path filePath) {
+        return "Your task list at " + filePath
+                + " is already open in another HappyBot session. Close the other session and try again.";
+    }
+
+    /**
      * Formats an error for a command that HappyBot could not carry out.
      *
      * @param message The explanation of what was wrong with the command.

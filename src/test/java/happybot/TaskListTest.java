@@ -25,11 +25,20 @@ public class TaskListTest {
     // Builds a list holding three tasks, numbered 1 to 3 in the order given here.
     private TaskList buildListOfThree() {
         TaskList taskList = new TaskList();
-        taskList.add(new ToDo("read book"));
-        taskList.add(new Deadline("return book", LocalDateTime.of(2019, 12, 2, 18, 0)));
-        taskList.add(new Event(LocalDateTime.of(2019, 12, 1, 9, 0),
+        addValidTask(taskList, new ToDo("read book"));
+        addValidTask(taskList, new Deadline("return book", LocalDateTime.of(2019, 12, 2, 18, 0)));
+        addValidTask(taskList, new Event(LocalDateTime.of(2019, 12, 1, 9, 0),
                 LocalDateTime.of(2019, 12, 3, 17, 0), "orientation"));
         return taskList;
+    }
+
+    /** Adds a task that this test has already established is valid and unique. */
+    private void addValidTask(TaskList taskList, Task task) {
+        try {
+            taskList.add(task);
+        } catch (HappyBotException e) {
+            throw new AssertionError(e);
+        }
     }
 
     // ==================== construction ====================
@@ -81,7 +90,7 @@ public class TaskListTest {
     public void getTasks_afterAdd_viewShowsNewTask() {
         TaskList taskList = new TaskList();
         List<Task> tasks = taskList.getTasks();
-        taskList.add(new ToDo("read book"));
+        addValidTask(taskList, new ToDo("read book"));
 
         // The view is a window onto the list rather than a snapshot taken when it was asked for.
         assertEquals(1, tasks.size());
@@ -139,7 +148,7 @@ public class TaskListTest {
         // list must hand back the task itself rather than a copy.
         TaskList taskList = new TaskList();
         Task task = new ToDo("read book");
-        taskList.add(task);
+        addValidTask(taskList, task);
 
         assertSame(task, taskList.getTask(1));
     }
@@ -161,7 +170,7 @@ public class TaskListTest {
     @Test
     public void delete_onlyTask_listBecomesEmpty() throws HappyBotException {
         TaskList taskList = new TaskList();
-        taskList.add(new ToDo("read book"));
+        addValidTask(taskList, new ToDo("read book"));
 
         taskList.delete(1);
 
@@ -194,6 +203,28 @@ public class TaskListTest {
         HappyBotException e = assertThrows(HappyBotException.class, () -> taskList.delete(1));
 
         assertEquals(TASK_NUMBER_MESSAGE, e.getMessage());
+    }
+
+    @Test
+    public void add_duplicateTask_exceptionThrownAndListUnchanged() throws HappyBotException {
+        TaskList taskList = new TaskList();
+        taskList.add(new ToDo("read book"));
+
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> taskList.add(new ToDo("READ BOOK")));
+
+        assertEquals("That task is already in your list.", e.getMessage());
+        assertEquals(1, taskList.getSize());
+    }
+
+    @Test
+    public void add_deadlinesWithDifferentDueDates_bothAdded() throws HappyBotException {
+        TaskList taskList = new TaskList();
+        taskList.add(new Deadline("submit report", LocalDateTime.of(2026, 9, 16, 12, 0)));
+
+        taskList.add(new Deadline("SUBMIT REPORT", LocalDateTime.of(2026, 9, 17, 12, 0)));
+
+        assertEquals(2, taskList.getSize());
     }
 
     // ==================== findDeadlinesDueOn ====================
@@ -263,7 +294,7 @@ public class TaskListTest {
     @Test
     public void findDeadlinesDueOn_matchingDeadlines_foundUnderTaskNumbers() {
         TaskList taskList = buildListOfThree();
-        taskList.add(new Deadline("pay fees", LocalDateTime.of(2019, 12, 2, 9, 0)));
+        addValidTask(taskList, new Deadline("pay fees", LocalDateTime.of(2019, 12, 2, 9, 0)));
 
         Map<Integer, Deadline> found = taskList.findDeadlinesDueOn(LocalDate.of(2019, 12, 2));
 
@@ -276,7 +307,7 @@ public class TaskListTest {
     @Test
     public void findDeadlinesDueOn_deadlineAtDifferentTimeSameDay_deadlineFound() {
         TaskList taskList = new TaskList();
-        taskList.add(new Deadline("return book", LocalDateTime.of(2019, 12, 2, 23, 59)));
+        addValidTask(taskList, new Deadline("return book", LocalDateTime.of(2019, 12, 2, 23, 59)));
 
         // A due command asks about a whole day, so the time of day must not matter.
         assertEquals(1, taskList.findDeadlinesDueOn(LocalDate.of(2019, 12, 2)).size());
@@ -326,13 +357,13 @@ public class TaskListTest {
         completedDeadline.markAsDone(LocalDate.of(2026, 9, 20));
         completedLastWeek.markAsDone(LocalDate.of(2026, 9, 13));
         legacyCompletedToDo.markAsDone();
-        taskList.add(completedToDo);
-        taskList.add(completedDeadline);
-        taskList.add(completedLastWeek);
-        taskList.add(legacyCompletedToDo);
-        taskList.add(mondayDeadline);
-        taskList.add(sundayDeadline);
-        taskList.add(nextWeekDeadline);
+        addValidTask(taskList, completedToDo);
+        addValidTask(taskList, completedDeadline);
+        addValidTask(taskList, completedLastWeek);
+        addValidTask(taskList, legacyCompletedToDo);
+        addValidTask(taskList, mondayDeadline);
+        addValidTask(taskList, sundayDeadline);
+        addValidTask(taskList, nextWeekDeadline);
 
         TaskStatistics statistics = taskList.getStatistics(currentDate);
 
@@ -354,9 +385,9 @@ public class TaskListTest {
 
         mondayTask.markAsDone(LocalDate.of(2025, 12, 29));
         sundayTask.markAsDone(LocalDate.of(2026, 1, 4));
-        taskList.add(mondayTask);
-        taskList.add(sundayTask);
-        taskList.add(sundayDeadline);
+        addValidTask(taskList, mondayTask);
+        addValidTask(taskList, sundayTask);
+        addValidTask(taskList, sundayDeadline);
 
         TaskStatistics statistics = taskList.getStatistics(LocalDate.of(2026, 1, 1));
 

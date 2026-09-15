@@ -23,6 +23,8 @@ import happybot.task.ToDo;
  */
 public class Parser {
     /** Usage messages that show where a date belongs in each command. */
+    private static final String BYE_USAGE = "Use: bye.";
+    private static final String LIST_USAGE = "Use: list.";
     private static final String DEADLINE_USAGE = "Use: deadline <description> /by <yyyy-MM-dd>.";
     private static final String EVENT_USAGE =
             "Use: event <description> /from <yyyy-MM-dd> /to <yyyy-MM-dd>.";
@@ -35,6 +37,12 @@ public class Parser {
 
     /** Usage message for the command that displays task statistics. */
     private static final String STATS_USAGE = "Use: stats.";
+
+    /** Message shown when a command does not name one positive whole task number. */
+    private static final String TASK_NUMBER_MESSAGE = "Please provide one positive whole task number.";
+
+    /** Message shown when the user sends no command. */
+    private static final String EMPTY_COMMAND_MESSAGE = "Please enter a command.";
 
     /** Text that separates a deadline description from its due date. */
     private static final String DEADLINE_MARKER = " /by ";
@@ -80,13 +88,33 @@ public class Parser {
                     + "defaults to 0000, such as 2019-12-02 1800.";
 
     /**
+     * Verifies that a command contains at least one non-whitespace character.
+     *
+     * <p>Commands intentionally accept accidental leading, trailing and repeated whitespace.
+     * Every parser method normalizes that whitespace before interpreting its argument.
+     *
+     * @param userInput The command line entered by the user.
+     * @throws HappyBotException If the command is blank.
+     */
+    public static void validateCommandInput(String userInput) throws HappyBotException {
+        if (userInput == null || normalizeWhitespace(userInput).isEmpty()) {
+            throw new HappyBotException(EMPTY_COMMAND_MESSAGE);
+        }
+    }
+
+    /**
      * Returns the first word of a command, which says what the user wants done.
      *
      * @param userInput The command line, exactly as it was typed.
-     * @return The command word, or the whole line when it holds no space.
+     * @return The command word, or an empty string when the line holds no word.
      */
     public static String parseCommandWord(String userInput) {
-        return userInput.split(" ", 2)[0];
+        String normalizedInput = normalizeWhitespace(userInput);
+        if (normalizedInput.isEmpty()) {
+            return "";
+        }
+
+        return normalizedInput.split(" ", 2)[0];
     }
 
     /**
@@ -96,8 +124,29 @@ public class Parser {
      * @return The text after the first space, or an empty string when there is none.
      */
     public static String parseCommandBody(String userInput) {
-        String[] commandParts = userInput.split(" ", 2);
+        String normalizedInput = normalizeWhitespace(userInput);
+        String[] commandParts = normalizedInput.split(" ", 2);
         return commandParts.length == 2 ? commandParts[1] : "";
+    }
+
+    /**
+     * Rejects arguments supplied to the bye command.
+     *
+     * @param body The command text after the command word.
+     * @throws HappyBotException If an argument was supplied.
+     */
+    public static void validateByeCommand(String body) throws HappyBotException {
+        validateNoArguments(body, BYE_USAGE);
+    }
+
+    /**
+     * Rejects arguments supplied to the list command.
+     *
+     * @param body The command text after the command word.
+     * @throws HappyBotException If an argument was supplied.
+     */
+    public static void validateListCommand(String body) throws HappyBotException {
+        validateNoArguments(body, LIST_USAGE);
     }
 
     /**
@@ -108,13 +157,18 @@ public class Parser {
      *
      * @param body The command text after the command word.
      * @return The number the user typed.
-     * @throws HappyBotException If the text is not a whole number.
+     * @throws HappyBotException If the text is not one positive whole number.
      */
     public static int parseTaskNumber(String body) throws HappyBotException {
+        String normalizedBody = normalizeWhitespace(body);
+        if (!normalizedBody.matches("[1-9]\\d*")) {
+            throw new HappyBotException(TASK_NUMBER_MESSAGE);
+        }
+
         try {
-            return Integer.parseInt(body.trim());
+            return Integer.parseInt(normalizedBody);
         } catch (NumberFormatException e) {
-            throw new HappyBotException("Please provide a valid task number.");
+            throw new HappyBotException(TASK_NUMBER_MESSAGE);
         }
     }
 
@@ -126,10 +180,9 @@ public class Parser {
      * @throws HappyBotException If the description is unusable or missing.
      */
     public static ToDo parseToDo(String body) throws HappyBotException {
-        checkTaskText(body);
+        String description = normalizeWhitespace(body);
+        checkTaskText(description);
 
-        // Trimming keeps stray spaces out of the description that is stored and shown.
-        String description = body.trim();
         if (description.isEmpty()) {
             throw new HappyBotException("The description of a todo cannot be empty.");
         }
@@ -145,16 +198,17 @@ public class Parser {
      * @throws HappyBotException If a part of the command is unusable, missing or unreadable.
      */
     public static Deadline parseDeadline(String body) throws HappyBotException {
-        checkTaskText(body);
+        String normalizedBody = normalizeWhitespace(body);
+        checkTaskText(normalizedBody);
 
-        int markerIndex = body.indexOf(DEADLINE_MARKER);
-        if (markerIndex < 0) {
+        if (countMarkerOccurrences(normalizedBody, DEADLINE_MARKER) != 1) {
             throw new HappyBotException(DEADLINE_USAGE);
         }
 
-        String description = body.substring(0, markerIndex).trim();
-        String dueDateText = body.substring(markerIndex + DEADLINE_MARKER.length());
-        if (description.isBlank() || dueDateText.isBlank()) {
+        int markerIndex = normalizedBody.indexOf(DEADLINE_MARKER);
+        String description = normalizedBody.substring(0, markerIndex);
+        String dueDateText = normalizedBody.substring(markerIndex + DEADLINE_MARKER.length());
+        if (description.isEmpty() || dueDateText.isEmpty()) {
             throw new HappyBotException(DEADLINE_USAGE);
         }
 
@@ -170,22 +224,24 @@ public class Parser {
      *         if the event does not start before it ends.
      */
     public static Event parseEvent(String body) throws HappyBotException {
-        checkTaskText(body);
+        String normalizedBody = normalizeWhitespace(body);
+        checkTaskText(normalizedBody);
 
-        int startMarkerIndex = body.indexOf(EVENT_START_MARKER);
-        // Searching for the end marker past the start marker keeps a /to that was typed first
-        // from being read as the one belonging to this event.
-        int endMarkerIndex =
-                body.indexOf(EVENT_END_MARKER, startMarkerIndex + EVENT_START_MARKER.length());
-        if (startMarkerIndex < 0 || endMarkerIndex < 0) {
+        int startMarkerIndex = normalizedBody.indexOf(EVENT_START_MARKER);
+        int endMarkerIndex = normalizedBody.indexOf(EVENT_END_MARKER);
+        boolean hasExactlyOneStartMarker = countMarkerOccurrences(normalizedBody, EVENT_START_MARKER) == 1;
+        boolean hasExactlyOneEndMarker = countMarkerOccurrences(normalizedBody, EVENT_END_MARKER) == 1;
+        boolean hasMarkersInOrder = startMarkerIndex >= 0
+                && endMarkerIndex >= startMarkerIndex + EVENT_START_MARKER.length();
+        if (!hasExactlyOneStartMarker || !hasExactlyOneEndMarker || !hasMarkersInOrder) {
             throw new HappyBotException(EVENT_USAGE);
         }
 
-        String description = body.substring(0, startMarkerIndex).trim();
+        String description = normalizedBody.substring(0, startMarkerIndex);
         String startText =
-                body.substring(startMarkerIndex + EVENT_START_MARKER.length(), endMarkerIndex);
-        String endText = body.substring(endMarkerIndex + EVENT_END_MARKER.length());
-        if (description.isBlank() || startText.isBlank() || endText.isBlank()) {
+                normalizedBody.substring(startMarkerIndex + EVENT_START_MARKER.length(), endMarkerIndex);
+        String endText = normalizedBody.substring(endMarkerIndex + EVENT_END_MARKER.length());
+        if (description.isEmpty() || startText.isEmpty() || endText.isEmpty()) {
             throw new HappyBotException(EVENT_USAGE);
         }
 
@@ -201,19 +257,20 @@ public class Parser {
     /**
      * Returns the date named by a due command.
      *
-     * <p>Any time written after the date is read and then dropped, because a due command asks
-     * about a whole day.
+     * <p>A due command asks about a whole day, so a supplied time is rejected rather than being
+     * silently ignored.
      *
      * @param body The command text after the command word.
      * @return The date the deadlines are wanted for.
      * @throws HappyBotException If no date was given or the date cannot be read.
      */
     public static LocalDate parseDueDate(String body) throws HappyBotException {
-        if (body.isBlank()) {
+        String normalizedBody = normalizeWhitespace(body);
+        if (normalizedBody.isEmpty() || normalizedBody.contains(" ")) {
             throw new HappyBotException(DUE_USAGE);
         }
 
-        return parseDateTime(body).toLocalDate();
+        return parseDateTime(normalizedBody).toLocalDate();
     }
 
     /**
@@ -224,7 +281,7 @@ public class Parser {
      * @throws HappyBotException If no keyword was given.
      */
     public static String parseKeyword(String body) throws HappyBotException {
-        String keyword = body.trim();
+        String keyword = normalizeWhitespace(body);
         if (keyword.isEmpty()) {
             throw new HappyBotException(FIND_USAGE);
         }
@@ -239,9 +296,7 @@ public class Parser {
      * @throws HappyBotException If any non-whitespace argument was supplied.
      */
     public static void validateStatsCommand(String body) throws HappyBotException {
-        if (!body.isBlank()) {
-            throw new HappyBotException(STATS_USAGE);
-        }
+        validateNoArguments(body, STATS_USAGE);
     }
 
     /**
@@ -255,8 +310,7 @@ public class Parser {
      * @throws HappyBotException If the date, or the time given after it, cannot be read.
      */
     private static LocalDateTime parseDateTime(String dateTimeText) throws HappyBotException {
-        // Collapsing runs of spaces lets the date and any time split cleanly in two.
-        String[] dateTimeParts = dateTimeText.trim().replaceAll("\\s+", " ").split(" ", 2);
+        String[] dateTimeParts = normalizeWhitespace(dateTimeText).split(" ", 2);
 
         // The date and the time are read separately so that each failure earns its own message.
         LocalDate date;
@@ -309,5 +363,42 @@ public class Parser {
         if (taskText.contains("|")) {
             throw new HappyBotException("A task cannot contain the '|' character.");
         }
+    }
+
+    /**
+     * Returns command text with runs of whitespace represented by one ordinary space.
+     */
+    private static String normalizeWhitespace(String text) {
+        if (text == null) {
+            return "";
+        }
+
+        return text.strip().replaceAll("\\s+", " ");
+    }
+
+    /**
+     * Rejects unexpected command arguments using the supplied usage message.
+     */
+    private static void validateNoArguments(String body, String usage) throws HappyBotException {
+        if (!normalizeWhitespace(body).isEmpty()) {
+            throw new HappyBotException(usage);
+        }
+    }
+
+    /**
+     * Counts the non-overlapping occurrences of a parameter marker in a command body.
+     */
+    private static int countMarkerOccurrences(String text, String marker) {
+        int markerCount = 0;
+        int searchStartIndex = 0;
+        int markerIndex = text.indexOf(marker);
+
+        while (markerIndex >= 0) {
+            markerCount++;
+            searchStartIndex = markerIndex + marker.length();
+            markerIndex = text.indexOf(marker, searchStartIndex);
+        }
+
+        return markerCount;
     }
 }

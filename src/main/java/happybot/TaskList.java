@@ -39,9 +39,17 @@ public class TaskList {
      * caller keeps a reference to the list it passed in.
      *
      * @param tasks The tasks to start with, usually the ones read from the data file.
+     * @throws IllegalArgumentException If the supplied list has a duplicate task.
      */
     public TaskList(List<Task> tasks) {
-        this.tasks = new ArrayList<>(tasks);
+        this();
+        for (Task task : tasks) {
+            if (containsTaskWithSameDetails(task)) {
+                throw new IllegalArgumentException("A task list cannot contain duplicate tasks.");
+            }
+
+            this.tasks.add(task);
+        }
     }
 
     /**
@@ -75,8 +83,13 @@ public class TaskList {
      * Adds a task to the end of the list.
      *
      * @param taskToAdd The task to add.
+     * @throws HappyBotException If the task duplicates one already in the list.
      */
-    public void add(Task taskToAdd) {
+    public void add(Task taskToAdd) throws HappyBotException {
+        if (containsTaskWithSameDetails(taskToAdd)) {
+            throw new HappyBotException("That task is already in your list.");
+        }
+
         tasks.add(taskToAdd);
     }
 
@@ -225,5 +238,18 @@ public class TaskList {
         }
 
         assert isTaskNumberInRange : "A task number must identify an existing task.";
+    }
+
+    /**
+     * Returns whether the list already holds a task with the same user-facing details.
+     */
+    private boolean containsTaskWithSameDetails(Task taskToCheck) {
+        for (Task task : tasks) {
+            if (task.hasSameDetails(taskToCheck)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

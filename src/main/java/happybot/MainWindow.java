@@ -57,7 +57,7 @@ public class MainWindow extends AnchorPane {
                 DialogBox.getBotDialog(happyBot.getResponse(input)));
         userInput.clear();
 
-        if (Parser.parseCommandWord(input).equals("bye")) {
+        if (happyBot.isExitCommand(input)) {
             Platform.exit();
         }
     }

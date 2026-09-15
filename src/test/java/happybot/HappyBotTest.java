@@ -1,6 +1,7 @@
 package happybot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -33,6 +34,22 @@ public class HappyBotTest {
         String response = happyBot.getResponse("dance");
 
         assertEquals(" Oops! I don't know what that means :-(", response);
+    }
+
+    @Test
+    public void getResponse_whitespaceAroundCommand_taskAddedWithNormalizedDescription(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        String response = happyBot.getResponse("  todo\tread   book  ");
+
+        assertTrue(response.contains("[T][ ] read book"));
+    }
+
+    @Test
+    public void getResponse_blankCommand_errorReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        assertEquals(" Oops! Please enter a command.", happyBot.getResponse("   \t"));
     }
 
     @Test
@@ -72,10 +89,33 @@ public class HappyBotTest {
     }
 
     @Test
+    public void getResponse_noArgumentCommandWithArgument_usageErrorReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        assertEquals(" Oops! Use: list.", happyBot.getResponse("list now"));
+        assertEquals(" Oops! Use: bye.", happyBot.getResponse("bye now"));
+        assertFalse(happyBot.isExitCommand("bye now"));
+    }
+
+    @Test
+    public void getResponse_duplicateTask_errorReturnedAndListUnchanged(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+        happyBot.getResponse("todo read book");
+
+        String response = happyBot.getResponse("todo READ book");
+        String listResponse = happyBot.getResponse("list");
+
+        assertEquals(" Oops! That task is already in your list.", response);
+        assertTrue(listResponse.contains("1.[T][ ] read book"));
+        assertFalse(listResponse.contains("2."));
+    }
+
+    @Test
     public void constructor_savedTask_taskLoaded(@TempDir Path tempDir) {
         Path dataFile = tempDir.resolve("tasks.txt");
         HappyBot firstSession = new HappyBot(dataFile);
         firstSession.getResponse("todo read book");
+        firstSession.close();
 
         HappyBot secondSession = new HappyBot(dataFile);
 
@@ -118,10 +158,28 @@ public class HappyBotTest {
         HappyBot firstSession = new HappyBot(dataFile, FIXED_CLOCK);
         firstSession.getResponse("todo read book");
         firstSession.getResponse("mark 1");
+        firstSession.close();
         HappyBot secondSession = new HappyBot(dataFile, FIXED_CLOCK);
 
         String response = secondSession.getResponse("stats");
 
         assertTrue(response.contains("Completed this week: 1"));
+    }
+
+    @Test
+    public void constructor_dataFileInUse_noticeAndCommandErrorReturned(@TempDir Path tempDir) {
+        Path dataFile = tempDir.resolve("tasks.txt");
+        HappyBot firstSession = new HappyBot(dataFile);
+        HappyBot secondSession = new HappyBot(dataFile);
+
+        try {
+            assertTrue(secondSession.getWelcomeMessage().contains("already open in another HappyBot session"));
+            assertEquals(" Oops! Your task list at " + dataFile
+                            + " is already open in another HappyBot session. Close the other session and try again.",
+                    secondSession.getResponse("todo read book"));
+        } finally {
+            secondSession.close();
+            firstSession.close();
+        }
     }
 }

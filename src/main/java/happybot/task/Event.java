@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
  */
 public class Event extends DatedTask {
 
-    protected LocalDateTime startTime;
-    protected LocalDateTime endTime;
+    private final LocalDateTime startTime;
+    private final LocalDateTime endTime;
 
     /**
      * Creates an event task with the specified description and date range.
@@ -16,11 +16,15 @@ public class Event extends DatedTask {
      * @param start The event start date.
      * @param end The event end date.
      * @param description The event description.
+     * @throws IllegalArgumentException If a date is null or the start is not before the end.
      */
     public Event(LocalDateTime start, LocalDateTime end, String description) {
         super(description);
-        assert start != null && end != null && start.isBefore(end)
-                : "An event must have a start time before its end time.";
+        if (start == null || end == null || !start.isBefore(end)) {
+            throw new IllegalArgumentException("An event must start before it ends.");
+        }
+
+        assert start.isBefore(end) : "An event must have a start time before its end time.";
         this.startTime = start;
         this.endTime = end;
     }
@@ -41,6 +45,13 @@ public class Event extends DatedTask {
      */
     public LocalDateTime getEndTime() {
         return endTime;
+    }
+
+    @Override
+    public boolean hasSameDetails(Task otherTask) {
+        return super.hasSameDetails(otherTask)
+                && startTime.equals(((Event) otherTask).startTime)
+                && endTime.equals(((Event) otherTask).endTime);
     }
 
     @Override

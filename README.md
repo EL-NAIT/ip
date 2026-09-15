@@ -48,9 +48,15 @@ handling concise and avoids temporary-file naming conflicts and file-system-spec
 behavior.
 
 If the data file contains unreadable task lines, HappyBot skips those lines, loads the remaining
-tasks, and displays a warning. If the file cannot be read or written, HappyBot reports the problem
-instead of ending the session. Tasks remain available in memory for the rest of that session when
-a save fails.
+tasks, and displays a warning. This includes a later task with the same type, case-insensitive
+description, and date/time details as an earlier one. If the file cannot be read or written,
+HappyBot reports the problem instead of ending the session. Tasks remain available in memory for
+the rest of that session when a save fails.
+
+HappyBot also holds an operating-system lock on a companion file while it uses its data file. If
+another HappyBot session already owns that lock, the second session displays a notice and does not
+read or change the task list. Close the first session before starting another one for the same data
+file. The operating system releases the lock when HappyBot exits or crashes.
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
 

@@ -49,9 +49,9 @@ public class EventTest {
     }
 
     @Test
-    public void constructor_endNotAfterStart_assertionErrorThrown() {
+    public void constructor_endNotAfterStart_exceptionThrown() {
         LocalDateTime time = LocalDateTime.of(2019, 12, 1, 9, 0);
 
-        assertThrows(AssertionError.class, () -> new Event(time, time, "orientation"));
+        assertThrows(IllegalArgumentException.class, () -> new Event(time, time, "orientation"));
     }
 }

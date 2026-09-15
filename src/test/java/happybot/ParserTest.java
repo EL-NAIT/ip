@@ -35,7 +35,7 @@ public class ParserTest {
 
     private static final String PIPE_MESSAGE = "A task cannot contain the '|' character.";
 
-    private static final String TASK_NUMBER_MESSAGE = "Please provide a valid task number.";
+    private static final String TASK_NUMBER_MESSAGE = "Please provide one positive whole task number.";
 
     // ==================== parseCommandWord ====================
 
@@ -81,11 +81,14 @@ public class ParserTest {
     }
 
     @Test
-    public void parseTaskNumber_numberOutOfRange_numberStillReturned() throws HappyBotException {
-        // Whether a number belongs to a task depends on the task list, so TaskList rejects it
-        // instead of Parser. This records that split of responsibility.
-        assertEquals(0, Parser.parseTaskNumber("0"));
-        assertEquals(-1, Parser.parseTaskNumber("-1"));
+    public void parseTaskNumber_zeroOrNegativeNumber_exceptionThrown() {
+        HappyBotException zeroError = assertThrows(HappyBotException.class,
+                () -> Parser.parseTaskNumber("0"));
+        HappyBotException negativeError = assertThrows(HappyBotException.class,
+                () -> Parser.parseTaskNumber("-1"));
+
+        assertEquals(TASK_NUMBER_MESSAGE, zeroError.getMessage());
+        assertEquals(TASK_NUMBER_MESSAGE, negativeError.getMessage());
     }
 
     @Test
@@ -98,6 +101,13 @@ public class ParserTest {
     @Test
     public void parseTaskNumber_decimalNumber_exceptionThrown() {
         HappyBotException e = assertThrows(HappyBotException.class, () -> Parser.parseTaskNumber("2.5"));
+
+        assertEquals(TASK_NUMBER_MESSAGE, e.getMessage());
+    }
+
+    @Test
+    public void parseTaskNumber_multipleArguments_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class, () -> Parser.parseTaskNumber("1 2"));
 
         assertEquals(TASK_NUMBER_MESSAGE, e.getMessage());
     }
@@ -329,6 +339,14 @@ public class ParserTest {
         assertEquals(PIPE_MESSAGE, e.getMessage());
     }
 
+    @Test
+    public void parseDeadline_duplicateByMarker_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDeadline("return book /by 2019-12-02 /by 2019-12-03"));
+
+        assertEquals(DEADLINE_USAGE, e.getMessage());
+    }
+
     // ==================== parseEvent ====================
 
     @Test
@@ -445,6 +463,14 @@ public class ParserTest {
         assertEquals(PIPE_MESSAGE, e.getMessage());
     }
 
+    @Test
+    public void parseEvent_duplicateParameterMarker_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseEvent("orientation /from 2019-12-01 /to 2019-12-03 /to 2019-12-04"));
+
+        assertEquals(EVENT_USAGE, e.getMessage());
+    }
+
     // ==================== parseKeyword ====================
 
     @Test
@@ -510,9 +536,11 @@ public class ParserTest {
     }
 
     @Test
-    public void parseDueDate_dateWithTime_timeDropped() throws HappyBotException {
-        // A due command asks about a whole day, so any time written after the date is ignored.
-        assertEquals(LocalDate.of(2019, 12, 2), Parser.parseDueDate("2019-12-02 1800"));
+    public void parseDueDate_dateWithTime_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseDueDate("2019-12-02 1800"));
+
+        assertEquals(DUE_USAGE, e.getMessage());
     }
 
     @Test

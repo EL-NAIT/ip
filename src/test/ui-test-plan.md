@@ -38,6 +38,13 @@ by hand from a scratch directory holding a `../../data/HappyBot.txt`:
 Both notices appear between the welcome message and the first command, inside
 their own pair of divider lines.
 
+The data-file lock also needs a manual two-process check:
+
+- start one HappyBot console session and leave it running;
+- start a second session from the same working directory; and
+- confirm that the second session reports that the task list is open in another HappyBot session,
+  asks the user to close the other session, and rejects task commands without crashing.
+
 ### Statistics checks that stay manual
 
 The runner starts each case with an empty data file and cannot freeze the system date, so the
@@ -391,7 +398,7 @@ ____________________________________________________________
  Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
- Oops! Please provide a valid task number.
+ Oops! Please provide one positive whole task number.
 ____________________________________________________________
 ____________________________________________________________
  Oops! Please choose a valid task number.
@@ -463,7 +470,8 @@ ____________________________________________________________
 
 ### TC-11: Reject invalid delete commands
 
-**Aim:** Confirm that HappyBot rejects deletion from an empty list and non-numeric or out-of-range task numbers.
+**Aim:** Confirm that HappyBot rejects deletion from an empty list and non-positive, non-numeric,
+or out-of-range task numbers.
 
 #### Inputs
 
@@ -497,10 +505,10 @@ ____________________________________________________________
  Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
- Oops! Please provide a valid task number.
+ Oops! Please provide one positive whole task number.
 ____________________________________________________________
 ____________________________________________________________
- Oops! Please choose a valid task number.
+ Oops! Please provide one positive whole task number.
 ____________________________________________________________
 ____________________________________________________________
  Oops! Please choose a valid task number.
@@ -801,13 +809,15 @@ ____________________________________________________________
 
 ### TC-18: Reject invalid due commands
 
-**Aim:** Confirm that HappyBot rejects a due command with no date or an unreadable date.
+**Aim:** Confirm that HappyBot rejects a due command with no date, an unreadable date, or an
+unnecessary time argument.
 
 #### Inputs
 
 ```text
 due
 due someday
+due 2019-12-02 1800
 bye
 ```
 
@@ -828,6 +838,9 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Oops! Please write dates as yyyy-MM-dd or d/M/yyyy, with an optional 24-hour time that defaults to 0000, such as 2019-12-02 1800.
+____________________________________________________________
+____________________________________________________________
+ Oops! Use: due <date>, such as due 2019-12-02.
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -1184,6 +1197,57 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Oops! Use: stats.
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-25: Reject duplicate tasks and unexpected command arguments
+
+**Aim:** Confirm that HappyBot normalizes accidental whitespace, rejects duplicate task details,
+and does not exit or change the list when commands have unexpected arguments.
+
+#### Inputs
+
+```text
+  todo   read  book
+todo READ book
+list now
+bye now
+list
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Got it. I've added this task:
+   [T][ ] read book
+ Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+ Oops! That task is already in your list.
+____________________________________________________________
+____________________________________________________________
+ Oops! Use: list.
+____________________________________________________________
+____________________________________________________________
+ Oops! Use: bye.
+____________________________________________________________
+____________________________________________________________
+ Here are the tasks in your list:
+ 1.[T][ ] read book
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!

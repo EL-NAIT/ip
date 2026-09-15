@@ -131,6 +131,23 @@ public class StorageTest {
         assertThrows(IllegalArgumentException.class, () -> storage.saveTasks(tasks));
     }
 
+    @Test
+    public void dataFileLock_secondStorageCannotAcquireUntilFirstReleases() throws IOException {
+        Storage firstStorage = new Storage(dataFile());
+        Storage secondStorage = new Storage(dataFile());
+
+        assertTrue(firstStorage.tryAcquireDataFileLock());
+        try {
+            assertFalse(secondStorage.tryAcquireDataFileLock());
+
+            firstStorage.releaseDataFileLock();
+            assertTrue(secondStorage.tryAcquireDataFileLock());
+        } finally {
+            firstStorage.releaseDataFileLock();
+            secondStorage.releaseDataFileLock();
+        }
+    }
+
     // ==================== loadTasks on files written elsewhere ====================
 
     @Test
@@ -214,6 +231,19 @@ public class StorageTest {
 
         // The readable tasks are kept rather than the whole file being abandoned.
         assertEquals(1, loadedTasks.size());
+        assertEquals(1, storage.getSkippedLineCount());
+    }
+
+    @Test
+    public void loadTasks_duplicateTask_lineSkippedAndCounted() throws IOException {
+        writeDataFile("T | 0 | read book", "T | 1 | READ BOOK", "T | 0 | return book");
+        Storage storage = new Storage(dataFile());
+
+        List<Task> loadedTasks = storage.loadTasks();
+
+        assertEquals(2, loadedTasks.size());
+        assertEquals("read book", loadedTasks.get(0).getDescription());
+        assertEquals("return book", loadedTasks.get(1).getDescription());
         assertEquals(1, storage.getSkippedLineCount());
     }
 
