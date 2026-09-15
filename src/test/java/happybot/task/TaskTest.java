@@ -33,6 +33,11 @@ public class TaskTest {
     }
 
     @Test
+    public void constructor_nullDescription_exceptionThrown() {
+        assertThrows(IllegalArgumentException.class, () -> new Task(null));
+    }
+
+    @Test
     public void markAsDone_notDoneTask_taskBecomesDone() {
         Task task = new Task("read book");
 
@@ -95,5 +100,23 @@ public class TaskTest {
         task.markAsDone(LocalDate.of(2026, 9, 16));
 
         assertEquals("[X] read book", task.toString());
+    }
+
+    @Test
+    public void hasSameDetails_sameTypeAndDescriptionIgnoringCase_tasksMatch() {
+        Task task = new Task("read book");
+        Task matchingTask = new Task("READ BOOK");
+        matchingTask.markAsDone(LocalDate.of(2026, 9, 16));
+
+        assertTrue(task.hasSameDetails(matchingTask));
+    }
+
+    @Test
+    public void hasSameDetails_differentTypeDescriptionOrNull_tasksDoNotMatch() {
+        Task task = new Task("read book");
+
+        assertFalse(task.hasSameDetails(new Task("return book")));
+        assertFalse(task.hasSameDetails(new ToDo("read book")));
+        assertFalse(task.hasSameDetails(null));
     }
 }

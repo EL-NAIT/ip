@@ -1,7 +1,9 @@
 package happybot.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
 
@@ -55,5 +57,16 @@ public class DeadlineTest {
     @Test
     public void constructor_nullDueDateTime_exceptionThrown() {
         assertThrows(IllegalArgumentException.class, () -> new Deadline("return book", null));
+    }
+
+    @Test
+    public void hasSameDetails_descriptionAndDueDateMatch_tasksMatchRegardlessOfCompletion() {
+        LocalDateTime dueDateTime = LocalDateTime.of(2019, 12, 2, 18, 0);
+        Deadline deadline = new Deadline("return book", dueDateTime);
+        Deadline matchingDeadline = new Deadline("RETURN BOOK", dueDateTime);
+        matchingDeadline.markAsDone();
+
+        assertTrue(deadline.hasSameDetails(matchingDeadline));
+        assertFalse(deadline.hasSameDetails(new Deadline("return book", dueDateTime.plusMinutes(1))));
     }
 }

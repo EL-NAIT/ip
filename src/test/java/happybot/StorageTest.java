@@ -80,6 +80,22 @@ public class StorageTest {
     }
 
     @Test
+    public void saveThenLoad_completedDatedTasks_completionDatesRestored() throws IOException {
+        Storage storage = new Storage(dataFile());
+        Deadline deadline = new Deadline("return book", LocalDateTime.of(2026, 9, 18, 18, 0));
+        Event event = new Event(LocalDateTime.of(2026, 9, 19, 9, 0),
+                LocalDateTime.of(2026, 9, 19, 10, 0), "meeting");
+        deadline.markAsDone(LocalDate.of(2026, 9, 16));
+        event.markAsDone(LocalDate.of(2026, 9, 17));
+
+        storage.saveTasks(List.of(deadline, event));
+
+        List<Task> loadedTasks = storage.loadTasks();
+        assertEquals(LocalDate.of(2026, 9, 16), loadedTasks.get(0).getCompletionDate());
+        assertEquals(LocalDate.of(2026, 9, 17), loadedTasks.get(1).getCompletionDate());
+    }
+
+    @Test
     public void saveTasks_calledTwice_previousContentsReplaced() throws IOException {
         Storage storage = new Storage(dataFile());
         storage.saveTasks(List.of(new ToDo("read book"), new ToDo("return book")));
@@ -146,6 +162,27 @@ public class StorageTest {
             firstStorage.releaseDataFileLock();
             secondStorage.releaseDataFileLock();
         }
+    }
+
+    @Test
+    public void dataFileLock_alreadyOwned_reacquisitionAndReleaseAreSafe() throws IOException {
+        Storage storage = new Storage(dataFile());
+
+        assertTrue(storage.tryAcquireDataFileLock());
+        assertTrue(storage.tryAcquireDataFileLock());
+        storage.releaseDataFileLock();
+        storage.releaseDataFileLock();
+
+        Storage nextStorage = new Storage(dataFile());
+        assertTrue(nextStorage.tryAcquireDataFileLock());
+        nextStorage.releaseDataFileLock();
+    }
+
+    @Test
+    public void getFilePath_constructorPathSamePathReturned() {
+        Path expectedFilePath = dataFile();
+
+        assertEquals(expectedFilePath, new Storage(expectedFilePath).getFilePath());
     }
 
     // ==================== loadTasks on files written elsewhere ====================

@@ -63,6 +63,13 @@ public class TaskListTest {
         assertEquals(1, taskList.getSize());
     }
 
+    @Test
+    public void constructor_duplicateTasks_exceptionThrown() {
+        List<Task> sourceTasks = List.of(new ToDo("read book"), new ToDo("READ BOOK"));
+
+        assertThrows(IllegalArgumentException.class, () -> new TaskList(sourceTasks));
+    }
+
     // ==================== add, getSize and isEmpty ====================
 
     @Test
@@ -395,5 +402,17 @@ public class TaskListTest {
         assertEquals(1, statistics.getCompletedToDoCount());
         assertEquals(1, statistics.getCompletedEventCount());
         assertEquals(1, statistics.getUncompletedDeadlineCount());
+    }
+
+    @Test
+    public void getStatistics_emptyList_allCountsZero() {
+        TaskStatistics statistics = new TaskList().getStatistics(LocalDate.of(2026, 9, 16));
+
+        assertEquals(0, statistics.getTotalTaskCount());
+        assertEquals(0, statistics.getCompletedTaskCount());
+        assertEquals(0, statistics.getCompletedToDoCount());
+        assertEquals(0, statistics.getCompletedDeadlineCount());
+        assertEquals(0, statistics.getCompletedEventCount());
+        assertEquals(0, statistics.getUncompletedDeadlineCount());
     }
 }

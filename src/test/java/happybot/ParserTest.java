@@ -14,6 +14,10 @@ import happybot.task.Event;
 import happybot.task.ToDo;
 
 public class ParserTest {
+    private static final String BYE_USAGE = "Use: bye.";
+
+    private static final String LIST_USAGE = "Use: list.";
+
     private static final String DEADLINE_USAGE = "Use: deadline <description> /by <yyyy-MM-dd>.";
 
     private static final String EVENT_USAGE =
@@ -37,6 +41,26 @@ public class ParserTest {
 
     private static final String TASK_NUMBER_MESSAGE = "Please provide one positive whole task number.";
 
+    private static final String EMPTY_COMMAND_MESSAGE = "Please enter a command.";
+
+    // ==================== validateCommandInput ====================
+
+    @Test
+    public void validateCommandInput_nullOrWhitespace_exceptionThrown() {
+        HappyBotException nullError = assertThrows(HappyBotException.class,
+                () -> Parser.validateCommandInput(null));
+        HappyBotException whitespaceError = assertThrows(HappyBotException.class,
+                () -> Parser.validateCommandInput(" \t "));
+
+        assertEquals(EMPTY_COMMAND_MESSAGE, nullError.getMessage());
+        assertEquals(EMPTY_COMMAND_MESSAGE, whitespaceError.getMessage());
+    }
+
+    @Test
+    public void validateCommandInput_commandWithWhitespace_noExceptionThrown() throws HappyBotException {
+        Parser.validateCommandInput("  todo\tread book  ");
+    }
+
     // ==================== parseCommandWord ====================
 
     @Test
@@ -52,6 +76,11 @@ public class ParserTest {
     @Test
     public void parseCommandWord_emptyInput_emptyStringReturned() {
         assertEquals("", Parser.parseCommandWord(""));
+    }
+
+    @Test
+    public void parseCommandWord_nullInput_emptyStringReturned() {
+        assertEquals("", Parser.parseCommandWord(null));
     }
 
     // ==================== parseCommandBody ====================
@@ -71,6 +100,37 @@ public class ParserTest {
         // Only the first space is consumed, so the rest of the line reaches the command untouched.
         assertEquals("return book /by 2019-12-02",
                 Parser.parseCommandBody("deadline return book /by 2019-12-02"));
+    }
+
+    @Test
+    public void parseCommandBody_nullInput_emptyStringReturned() {
+        assertEquals("", Parser.parseCommandBody(null));
+    }
+
+    // ==================== validateByeCommand and validateListCommand ====================
+
+    @Test
+    public void validateNoArgumentCommands_blankOrWhitespaceBody_noExceptionThrown() throws HappyBotException {
+        Parser.validateByeCommand("");
+        Parser.validateByeCommand(" \t ");
+        Parser.validateListCommand("");
+        Parser.validateListCommand(" \t ");
+    }
+
+    @Test
+    public void validateByeCommand_argumentGiven_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.validateByeCommand("now"));
+
+        assertEquals(BYE_USAGE, e.getMessage());
+    }
+
+    @Test
+    public void validateListCommand_argumentGiven_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.validateListCommand("now"));
+
+        assertEquals(LIST_USAGE, e.getMessage());
     }
 
     // ==================== parseTaskNumber ====================
@@ -115,6 +175,14 @@ public class ParserTest {
     @Test
     public void parseTaskNumber_emptyBody_exceptionThrown() {
         HappyBotException e = assertThrows(HappyBotException.class, () -> Parser.parseTaskNumber(""));
+
+        assertEquals(TASK_NUMBER_MESSAGE, e.getMessage());
+    }
+
+    @Test
+    public void parseTaskNumber_numberTooLargeForInteger_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseTaskNumber("999999999999999999999999"));
 
         assertEquals(TASK_NUMBER_MESSAGE, e.getMessage());
     }
@@ -471,6 +539,14 @@ public class ParserTest {
         assertEquals(EVENT_USAGE, e.getMessage());
     }
 
+    @Test
+    public void parseEvent_duplicateStartMarker_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class,
+                () -> Parser.parseEvent("orientation /from 2019-12-01 /from 2019-12-02 /to 2019-12-03"));
+
+        assertEquals(EVENT_USAGE, e.getMessage());
+    }
+
     // ==================== parseKeyword ====================
 
     @Test
@@ -553,6 +629,13 @@ public class ParserTest {
     @Test
     public void parseDueDate_spacesOnly_exceptionThrown() {
         HappyBotException e = assertThrows(HappyBotException.class, () -> Parser.parseDueDate("   "));
+
+        assertEquals(DUE_USAGE, e.getMessage());
+    }
+
+    @Test
+    public void parseDueDate_nullBody_exceptionThrown() {
+        HappyBotException e = assertThrows(HappyBotException.class, () -> Parser.parseDueDate(null));
 
         assertEquals(DUE_USAGE, e.getMessage());
     }

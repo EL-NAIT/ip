@@ -4,17 +4,33 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 public class HappyBotTest {
     private static final Clock FIXED_CLOCK = Clock.fixed(
             Instant.parse("2026-09-16T09:00:00Z"), ZoneOffset.UTC);
+
+    private final InputStream originalInput = System.in;
+    private final PrintStream originalOutput = System.out;
+
+    @AfterEach
+    void restoreStandardStreams() {
+        System.setIn(originalInput);
+        System.setOut(originalOutput);
+    }
 
     @Test
     public void getResponse_addAndList_taskShown(@TempDir Path tempDir) {
@@ -180,6 +196,171 @@ public class HappyBotTest {
         } finally {
             secondSession.close();
             firstSession.close();
+        }
+    }
+
+    @Test
+    public void getResponse_dueAndFindCommands_matchingTasksReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        try {
+            happyBot.getResponse("todo read book");
+            happyBot.getResponse("deadline return book /by 2026-09-16 1800");
+
+            assertEquals(" Here are the deadlines due on Sep 16 2026:\n"
+                            + " 2.[D][ ] return book (by: Sep 16 2026 6:00PM)",
+                    happyBot.getResponse("due 2026-09-16"));
+            assertEquals(" Here are the matching tasks in your list:\n"
+                            + " 1.[T][ ] read book\n"
+                            + " 2.[D][ ] return book (by: Sep 16 2026 6:00PM)",
+                    happyBot.getResponse("find BOOK"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getResponse_noMatchingDueOrFindCommand_noticeReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        try {
+            happyBot.getResponse("todo read book");
+
+            assertEquals(" There are no deadlines due on Sep 16 2026.",
+                    happyBot.getResponse("due 2026-09-16"));
+            assertEquals(" There are no tasks matching \"pizza\".", happyBot.getResponse("find pizza"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getResponse_markUnmarkAndDeleteTask_eachChangeConfirmed(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"), FIXED_CLOCK);
+
+        try {
+            happyBot.getResponse("todo read book");
+
+            assertEquals(" Nice! I've marked this task as done:\n   [T][X] read book",
+                    happyBot.getResponse("mark 1"));
+            assertEquals(" OK, I've marked this task as not done yet:\n   [T][ ] read book",
+                    happyBot.getResponse("unmark 1"));
+            assertEquals(" Alrighties I've removed this task:\n"
+                            + "   [T][ ] read book\n"
+                            + " Now you have 0 tasks in the list.",
+                    happyBot.getResponse("delete 1"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getResponse_emptyTaskListUnmarkAndDelete_errorsReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        try {
+            assertEquals(" Oops! There are no tasks to unmark.", happyBot.getResponse("unmark 1"));
+            assertEquals(" Oops! There are no tasks to delete.", happyBot.getResponse("delete 1"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getResponse_unusableOrOutOfRangeTaskNumber_errorReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        try {
+            happyBot.getResponse("todo read book");
+
+            assertEquals(" Oops! Please choose a valid task number.", happyBot.getResponse("mark 2"));
+            assertEquals(" Oops! Please provide one positive whole task number.", happyBot.getResponse("unmark 0"));
+            assertEquals(" Oops! Please choose a valid task number.", happyBot.getResponse("delete 2"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getWelcomeMessage_loadingSkippedLines_noticeIncluded(@TempDir Path tempDir) throws Exception {
+        Path dataFile = tempDir.resolve("tasks.txt");
+        Files.writeString(dataFile, "X | 0 | unreadable\n", StandardCharsets.UTF_8);
+        HappyBot happyBot = new HappyBot(dataFile);
+
+        try {
+            assertEquals("Hello! I'm HappyBot.\nHow can I cheer you up today?\n\n"
+                            + "Heads up! I skipped 1 unreadable line(s) in your saved data.",
+                    happyBot.getWelcomeMessage());
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getWelcomeMessage_loadingDataDirectory_noticeIncluded(@TempDir Path tempDir) throws Exception {
+        Path dataFile = tempDir.resolve("tasks.txt");
+        Files.createDirectory(dataFile);
+        HappyBot happyBot = new HappyBot(dataFile);
+
+        try {
+            assertEquals("Hello! I'm HappyBot.\nHow can I cheer you up today?\n\n"
+                            + "Heads up! I could not read " + dataFile
+                            + ", so I am starting with an empty task list.",
+                    happyBot.getWelcomeMessage());
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getResponse_dataFileDirectoryCannotBeSaved_warningPrecedesConfirmation(@TempDir Path tempDir)
+            throws Exception {
+        Path dataFile = tempDir.resolve("tasks.txt");
+        Files.createDirectory(dataFile);
+        HappyBot happyBot = new HappyBot(dataFile);
+
+        try {
+            assertEquals(" Heads up! I could not save your tasks to " + dataFile + ".\n"
+                            + " Got it. I've added this task:\n"
+                            + "   [T][ ] read book\n"
+                            + " Now you have 1 tasks in the list.",
+                    happyBot.getResponse("todo read book"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void isExitCommand_validAndInvalidInputs_correctlyIdentified(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        try {
+            assertTrue(happyBot.isExitCommand(" \tbye  "));
+            assertFalse(happyBot.isExitCommand("list"));
+            assertFalse(happyBot.isExitCommand("bye now"));
+            assertFalse(happyBot.isExitCommand(null));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void run_endOfInputAfterCommand_welcomeResponseAndFarewellPrinted(@TempDir Path tempDir) {
+        System.setIn(new ByteArrayInputStream("list\n".getBytes(StandardCharsets.UTF_8)));
+        ByteArrayOutputStream capturedOutput = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(capturedOutput, true, StandardCharsets.UTF_8));
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        try {
+            happyBot.run();
+
+            String output = capturedOutput.toString(StandardCharsets.UTF_8);
+            assertTrue(output.contains("Hello! I'm HappyBot.\nHow can I cheer you up today?"));
+            assertTrue(output.contains(" Here are the tasks in your list:"));
+            assertTrue(output.endsWith("Bye. Hope to see you again soon!\n"
+                    + "____________________________________________________________\n"));
+        } finally {
+            happyBot.close();
         }
     }
 }

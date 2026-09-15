@@ -1,7 +1,9 @@
 package happybot.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
 
@@ -53,5 +55,26 @@ public class EventTest {
         LocalDateTime time = LocalDateTime.of(2019, 12, 1, 9, 0);
 
         assertThrows(IllegalArgumentException.class, () -> new Event(time, time, "orientation"));
+    }
+
+    @Test
+    public void constructor_nullDateOrEndBeforeStart_exceptionThrown() {
+        LocalDateTime time = LocalDateTime.of(2019, 12, 1, 9, 0);
+
+        assertThrows(IllegalArgumentException.class, () -> new Event(null, time, "orientation"));
+        assertThrows(IllegalArgumentException.class, () -> new Event(time, null, "orientation"));
+        assertThrows(IllegalArgumentException.class, () -> new Event(time, time.minusMinutes(1), "orientation"));
+    }
+
+    @Test
+    public void hasSameDetails_descriptionAndTimeRangeMatch_eventsMatchRegardlessOfCompletion() {
+        LocalDateTime start = LocalDateTime.of(2019, 12, 1, 9, 0);
+        LocalDateTime end = LocalDateTime.of(2019, 12, 1, 10, 0);
+        Event event = new Event(start, end, "orientation");
+        Event matchingEvent = new Event(start, end, "ORIENTATION");
+        matchingEvent.markAsDone();
+
+        assertTrue(event.hasSameDetails(matchingEvent));
+        assertFalse(event.hasSameDetails(new Event(start, end.plusMinutes(1), "orientation")));
     }
 }
