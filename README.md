@@ -73,8 +73,8 @@ They helped to:
    saves.
 4. Create, update, and run JUnit and console UI tests, including test cases for new features and
    boundary conditions.
-5. Prepare and revise project documentation, including this README, the user guide, and test-plan
-   instructions.
+5. Complete the optional `A-MoreErrorHandling` and `A-MoreTesting` increments.
+6. Prepare and revise project documentation and test plan instructions.
 
 AI suggestions were reviewed, adapted, and tested before use. Some proposed designs were rejected
 in favour of simpler solutions based on the Java standard library. The project author made the final

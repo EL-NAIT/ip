@@ -89,8 +89,8 @@ deadline Pay library fine /by 17/11/2026
 
 ### Add an event: `event`
 
-Use an event for something that has a start and end time, such as a meeting or class. The end time
-must be later than the start time.
+Use an event for something that has a start and end time, such as a meeting or class. The end date
+and time must be later than the start date and time.
 
 **Format:** `event DESCRIPTION /from DATE [TIME] /to DATE [TIME]`
 
