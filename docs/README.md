@@ -27,11 +27,14 @@ coming up; and see what you completed this week.
    order:
 
    - `todo Review lecture notes` adds a to-do.
-   - `deadline Submit draft /by 2026-09-18 1700` adds a deadline.
-   - `event Team meeting /from 2026-09-17 1400 /to 2026-09-17 1530` adds an event.
+   - `deadline Submit draft /by TOMORROW 1700` adds a deadline.
+   - `event Team meeting /from TOMORROW 1400 /to TOMORROW 1530` adds an event.
    - `list` shows all tasks.
    - `stats` shows your progress for the week.
    - `delete 1` removes task 1 after you have listed your tasks.
+
+   (Replace `TOMORROW` with the current date plus one day. HappyBot rejects a deadline or an
+   event whose end date is before the current date.)
 7. Refer to the [Commands and Features](#commands-and-features) section below for details of
    each command.
 
@@ -45,7 +48,7 @@ coming up; and see what you completed this week.
 - HappyBot accepts extra spaces and tabs between command parts, but task descriptions are stored
   with one space between words.
 - Task descriptions cannot contain the `|` character.
-- `DATE` is either `yyyy-MM-dd` or `d/M/yyyy`, such as `2026-09-18` or `18/9/2026`.
+- `DATE` is either `yyyy-MM-dd` or `d/M/yyyy`, such as `2026-11-17` or `17/11/2026`.
 - `[T]`, `[D]`, and `[E]` identify a to-do, deadline, and event. `[X]` means complete; `[ ]`
   means incomplete.
 
@@ -71,14 +74,17 @@ Use a deadline for work due on a particular date.
 **Format:** `deadline DESCRIPTION /by DATE [TIME]`
 
 - `TIME` is optional and uses 24-hour `HHmm` format, such as `1700`. If you omit it, HappyBot
-  stores the deadline at `0000` (12:00 AM), at the beginning of that date. This does not mean
-  “any time that day”, so include a time when the exact deadline matters.
+  stores the deadline at `0000` (12:00 AM). When adding a deadline without a time, HappyBot
+  checks only that its date is today or later; include a time when the exact deadline matters.
+- HappyBot rejects a deadline that is already due. A deadline with a time must have a due
+  date and time after the current date and time, while a deadline without one must have a date
+  that is today or later.
 
 **Examples:**
 
 ```text
-deadline Submit draft /by 2026-09-18 1700
-deadline Pay library fine /by 18/9/2026
+deadline Submit draft /by 2026-11-17 1700
+deadline Pay library fine /by 17/11/2026
 ```
 
 ### Add an event: `event`
@@ -92,11 +98,14 @@ must be later than the start time.
   HappyBot uses `0000` (12:00 AM) at the beginning of that date. For a same-date event, ensure
   that its start time is earlier than its end time; omitting both times gives equal times and is
   rejected.
+- HappyBot rejects an event that has already ended. An explicit end date and time must be after
+  the current date and time; without an end time, the end date must be today or later. The event
+  may already have started.
 
 **Example:**
 
 ```text
-event Team meeting /from 2026-09-17 1400 /to 2026-09-17 1530
+event Team meeting /from 2026-11-17 1400 /to 2026-11-17 1530
 ```
 
 ### View every task: `list`
@@ -135,7 +144,7 @@ Shows deadlines due on the selected date. This command accepts a date only, not 
 **Example:**
 
 ```text
-due 2026-09-18
+due 2026-11-17
 ```
 
 ### Mark a task complete: `mark`
@@ -224,11 +233,11 @@ bye
 Action | Format | Example
 --- | --- | ---
 Add a to-do | `todo DESCRIPTION` | `todo Review lecture notes`
-Add a deadline | `deadline DESCRIPTION /by DATE [TIME]` | `deadline Submit draft /by 2026-09-18 1700`
-Add an event | `event DESCRIPTION /from DATE [TIME] /to DATE [TIME]` | `event Team meeting /from 2026-09-17 1400 /to 2026-09-17 1530`
+Add a deadline | `deadline DESCRIPTION /by DATE [TIME]` | `deadline Submit draft /by 2026-11-17 1700`
+Add an event | `event DESCRIPTION /from DATE [TIME] /to DATE [TIME]` | `event Team meeting /from 2026-11-17 1400 /to 2026-11-17 1530`
 List tasks | `list` | `list`
 Find tasks | `find KEYWORD` | `find report`
-View deadlines due on a date | `due DATE` | `due 2026-09-18`
+View deadlines due on a date | `due DATE` | `due 2026-11-17`
 Mark a task complete | `mark INDEX` | `mark 4`
 Mark a task incomplete | `unmark INDEX` | `unmark 2`
 Delete a task | `delete INDEX` | `delete 3`
