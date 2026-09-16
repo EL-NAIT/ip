@@ -62,46 +62,20 @@ file. The operating system releases the lock when HappyBot exits or crashes.
 
 ## AI Use
 
-Codex was used for the following:
+Codex and Claude Code were used as development assistants throughout most project increments.
+They helped to:
 
-1. Updating this README.
-2. Assisting with Level 0 increments.
-3. Explaining Java and object-oriented design decisions, including where to validate command input.
-4. Implementing user input parsing with string functions.
-5. Helping format HappyBot’s console output.
-6. Creating, updating, and running console UI test cases in `src/test/ui-test-plan.md`.
-7. Implementing the JavaFX GUI for HappyBot and testing its basic chatbot functionality.
-8. Reviewing and simplifying file I/O by replacing temporary-file and atomic-move logic with
-   direct UTF-8 writing, and updating the related tests and documentation.
+1. Discuss and evaluate Java and object-oriented design choices, including task modelling,
+   package structure, parsing, validation, and storage.
+2. Implement and refactor features for task management, date and time handling, duplicate-task
+   detection, data persistence and recovery, console output, and the JavaFX interface.
+3. Diagnose edge cases involving invalid input, saved-data errors, task-file locking, and failed
+   saves.
+4. Create, update, and run JUnit and console UI tests, including test cases for new features and
+   boundary conditions.
+5. Prepare and revise project documentation, including this README, the user guide, and test-plan
+   instructions.
 
-Claude Code was used for the following:
-
-1. Implementing Level 7 tasks saving and loading
-2. Handling storage edge cases and errors: corrupted or unreadable data files, a missing data file or folder, failed saves, task text containing the `|` character used as the data file separator, and input that ends without a `bye` command.
-3. Implementing the original all-or-nothing save approach using a temporary file and an atomic
-   move. This was later replaced with simpler direct writing after review.
-4. Refactoring the duplicated task-adding code into an `addTask` method.
-5. Explaining the Java library behavior used in that original implementation, including
-   `Files.write`, `Path.of`, `Path.resolveSibling`, and `Scanner.hasNextLine`.
-6. Updating and running the console UI test cases in `src/test/ui-test-plan.md`, including making each case start from a clean data file and adding cases TC-12 and TC-13.
-
-Claude Code was used for the Level 8 date and time increment:
-
-1. Replacing the `String` due date in `Deadline` and the start and end fields in `Event` with `java.time.LocalDateTime`.
-2. Parsing command dates in either the `yyyy-MM-dd` or `d/M/yyyy` pattern, with an optional 24-hour time that defaults to `0000`.
-3. Adding the `DatedTask` superclass so `Deadline` and `Event` share one display format.
-4. Rejecting an event whose start is not before its end.
-5. Adding the `due <date>` command
-6. Storing dates in the data file in ISO form so that times survive saving and loading, and skipping saved lines whose dates cannot be read.
-7. Updating and running the console UI test cases in `src/test/ui-test-plan.md`, adding cases TC-14 to TC-19.
-
-Claude Code was used for the A-MoreOOP increment: turning `HappyBot` into an object and extracting the `Ui`, `Parser`, 
-and `TaskList` classes out of it in five small steps, running the console UI test cases after each one.
-
-Claude Code was used for the A-Packages increment: proposing the `happybot` and
-`happybot.task` package structure with the alternatives weighed, moving the classes
-into it, and updating the UI test plan runner commands and the README setup path.
-
-Several designs suggested by Claude Code were rejected in favour of simpler code that relies on the Java standard library.
-
-All AI-generated or AI-suggested code and test cases were personally reviewed before use.
+AI suggestions were reviewed, adapted, and tested before use. Some proposed designs were rejected
+in favour of simpler solutions based on the Java standard library. The project author made the final
+design decisions and is responsible for the submitted work.
