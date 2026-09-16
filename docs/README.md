@@ -214,13 +214,17 @@ stats
 
 <img src="images/stats.png" alt="HappyBot weekly task statistics" width="520">
 
+### Saved data and recovery
+
+HappyBot automatically saves your tasks after you add, mark, unmark, or delete them. It loads the
+same tasks the next time you start the app.
+
+- If some saved task entries cannot be read, HappyBot skips only those entries, loads the remaining
+  tasks, and shows a warning.
+- Run only one HappyBot session for each data file. If another session is already using the same
+  file, close it before starting a new session.
+
 ### Exit HappyBot: `bye`
-
-HappyBot saves tasks automatically after you add, mark, unmark, or delete a task. It loads the
-same data from `data/HappyBot.txt` the next time you start it.
-
-Run one HappyBot session per data file. If another session is already open, close it and restart
-this session before making changes.
 
 To exit, use:
 
