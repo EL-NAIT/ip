@@ -1,7 +1,9 @@
 package happybot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
 
@@ -34,6 +36,18 @@ public class ParserEventTest {
 
         assertEquals(LocalDateTime.of(2019, 12, 1, 9, 0), event.getStartTime());
         assertEquals(LocalDateTime.of(2019, 12, 3, 17, 0), event.getEndTime());
+    }
+
+    @Test
+    public void parseEventDetails_dateOnlyAndExplicitMidnight_timePresenceKept()
+            throws HappyBotException {
+        Parser.EventDetails eventDetails =
+                Parser.parseEventDetails("orientation /from 2019-12-01 /to 2019-12-03 0000");
+
+        assertFalse(eventDetails.getStartTime().hasTime());
+        assertTrue(eventDetails.getEndTime().hasTime());
+        assertEquals(LocalDateTime.of(2019, 12, 3, 0, 0),
+                eventDetails.getEndTime().getDateTime());
     }
 
     @Test

@@ -296,7 +296,7 @@ public class Storage {
      * @param fields The fields parsed from the line.
      * @param taskLine The original line, included in the error message.
      * @return The task described by the type-specific fields.
-     * @throws IllegalArgumentException If the line has an unknown task type.
+     * @throws IllegalArgumentException If the line has an unsupported type or invalid task details.
      * @throws DateTimeParseException If a date field is not a date and time in ISO form.
      */
     private Task createTask(String[] fields, String taskLine) {
@@ -311,10 +311,6 @@ public class Storage {
             case TASK_TYPE_EVENT:
                 LocalDateTime startTime = LocalDateTime.parse(fields[FIRST_DATE_TIME_FIELD_INDEX]);
                 LocalDateTime endTime = LocalDateTime.parse(fields[SECOND_DATE_TIME_FIELD_INDEX]);
-                if (!startTime.isBefore(endTime)) {
-                    throw new IllegalArgumentException("Event end time must be after its start time: "
-                            + taskLine);
-                }
                 yield new Event(startTime, endTime, fields[DESCRIPTION_FIELD_INDEX]);
             default:
                 throw new IllegalArgumentException("Unsupported task type in data file: " + taskLine);

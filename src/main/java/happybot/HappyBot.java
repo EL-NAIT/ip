@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import happybot.task.DatedTask;
+import happybot.task.Deadline;
+import happybot.task.Event;
 import happybot.task.Task;
 
 /**
@@ -25,7 +28,7 @@ public class HappyBot {
     /** Storage that loads the saved tasks at startup and saves them after every change. */
     private final Storage storage;
 
-    /** Clock used to record task completions and identify the current calendar week. */
+    /** Clock used to record task completions, identify the current week and validate new tasks. */
     private final Clock clock;
 
     /** Tasks held by this HappyBot for the length of the session. */
@@ -119,6 +122,73 @@ public class HappyBot {
     private String addTask(Task taskToAdd) throws HappyBotException {
         tasks.add(taskToAdd);
         return saveTasks() + ui.formatAddedTask(taskToAdd, tasks.getSize());
+    }
+
+    /**
+     * Adds the deadline described by a command after checking that it has not already passed.
+     *
+     * @param body The command text after the command word.
+     * @throws HappyBotException If the command is invalid or the deadline has already passed.
+     */
+    private String addDeadline(String body) throws HappyBotException {
+        Parser.DeadlineDetails deadlineDetails = Parser.parseDeadlineDetails(body);
+        validateNotPast(deadlineDetails.getDueDateTime(), "A deadline cannot be due in the past.");
+
+        Deadline deadline = new Deadline(deadlineDetails.getDescription(),
+                deadlineDetails.getDueDateTime().getDateTime());
+        return addTask(deadline);
+    }
+
+    /**
+     * Adds the event described by a command after checking that its end has not already passed.
+     *
+     * @param body The command text after the command word.
+     * @throws HappyBotException If the command is invalid, its range is invalid or it has ended.
+     */
+    private String addEvent(String body) throws HappyBotException {
+        Parser.EventDetails eventDetails = Parser.parseEventDetails(body);
+        Event event = createEvent(eventDetails);
+        validateNotPast(eventDetails.getEndTime(), "An event cannot end in the past.");
+        return addTask(event);
+    }
+
+    /**
+     * Creates an event and turns an invalid event range into a command error.
+     *
+     * @param eventDetails The parsed description and dates of the event.
+     * @return The event described by the supplied details.
+     * @throws HappyBotException If the event does not start before it ends.
+     */
+    private Event createEvent(Parser.EventDetails eventDetails) throws HappyBotException {
+        try {
+            return new Event(eventDetails.getStartTime().getDateTime(),
+                    eventDetails.getEndTime().getDateTime(), eventDetails.getDescription());
+        } catch (IllegalArgumentException e) {
+            throw new HappyBotException(e.getMessage());
+        }
+    }
+
+    /**
+     * Rejects a parsed date and time that has already passed.
+     *
+     * <p>A supplied time is compared to the current time. A date without a supplied time is
+     * compared only to the current date, so it remains valid throughout that date.
+     *
+     * @param taskDateTime The date and optional time to validate.
+     * @param errorMessage The message to show when the date and time has already passed.
+     * @throws HappyBotException If the supplied date and time has already passed.
+     */
+    private void validateNotPast(Parser.ParsedDateTime taskDateTime, String errorMessage)
+            throws HappyBotException {
+        LocalDateTime currentDateTime = LocalDateTime.now(clock);
+        if (taskDateTime.hasTime() && !taskDateTime.getDateTime().isAfter(currentDateTime)) {
+            throw new HappyBotException(errorMessage);
+        }
+
+        if (!taskDateTime.hasTime()
+                && taskDateTime.getDateTime().toLocalDate().isBefore(currentDateTime.toLocalDate())) {
+            throw new HappyBotException(errorMessage);
+        }
     }
 
     /**
@@ -245,8 +315,8 @@ public class HappyBot {
                 case "find" -> getMatchingTasks(Parser.parseKeyword(body));
                 case "stats" -> getStatistics(body);
                 case "todo" -> addTask(Parser.parseToDo(body));
-                case "deadline" -> addTask(Parser.parseDeadline(body));
-                case "event" -> addTask(Parser.parseEvent(body));
+                case "deadline" -> addDeadline(body);
+                case "event" -> addEvent(body);
                 default -> throw new HappyBotException("I don't know what that means :-(");
             };
         } catch (HappyBotException e) {

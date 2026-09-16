@@ -59,6 +59,13 @@ following current-week boundary and saved-data cases are checked manually:
 - load a legacy completed line such as `T | 1 | old task` and confirm it remains completed but
   is not counted as completed this week.
 
+The time-sensitive expiry boundaries also need a manual check because their expected result
+depends on the clock when HappyBot runs:
+
+- a date-only deadline and date-only event ending today are accepted;
+- an explicitly timed deadline or event end earlier today is rejected; and
+- an explicitly timed deadline or event end later today is accepted.
+
 ## Test cases
 
 ### TC-01: Exit the program
@@ -243,8 +250,8 @@ ____________________________________________________________
 #### Inputs
 
 ```text
-deadline return book /by 2019-10-15
-event project meeting /from 2019-08-06 /to 2019-08-07
+deadline return book /by 2096-10-15
+event project meeting /from 2096-08-06 /to 2096-08-07
 list
 bye
 ```
@@ -263,18 +270,18 @@ How can I cheer you up today?
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Oct 15 2019 12:00AM)
+   [D][ ] return book (by: Oct 15 2096 12:00AM)
  Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] project meeting (from: Aug 06 2019 12:00AM to: Aug 07 2019 12:00AM)
+   [E][ ] project meeting (from: Aug 06 2096 12:00AM to: Aug 07 2096 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
- 1.[D][ ] return book (by: Oct 15 2019 12:00AM)
- 2.[E][ ] project meeting (from: Aug 06 2019 12:00AM to: Aug 07 2019 12:00AM)
+ 1.[D][ ] return book (by: Oct 15 2096 12:00AM)
+ 2.[E][ ] project meeting (from: Aug 06 2096 12:00AM to: Aug 07 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -420,8 +427,8 @@ ____________________________________________________________
 
 ```text
 todo read book
-deadline return book /by 2019-10-15
-event project meeting /from 2019-08-06 /to 2019-08-07
+deadline return book /by 2096-10-15
+event project meeting /from 2096-08-06 /to 2096-08-07
 delete 2
 list
 bye
@@ -446,23 +453,23 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Oct 15 2019 12:00AM)
+   [D][ ] return book (by: Oct 15 2096 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] project meeting (from: Aug 06 2019 12:00AM to: Aug 07 2019 12:00AM)
+   [E][ ] project meeting (from: Aug 06 2096 12:00AM to: Aug 07 2096 12:00AM)
  Now you have 3 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Alrighties I've removed this task:
-   [D][ ] return book (by: Oct 15 2019 12:00AM)
+   [D][ ] return book (by: Oct 15 2096 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
  1.[T][ ] read book
- 2.[E][ ] project meeting (from: Aug 06 2019 12:00AM to: Aug 07 2019 12:00AM)
+ 2.[E][ ] project meeting (from: Aug 06 2096 12:00AM to: Aug 07 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -650,9 +657,9 @@ ____________________________________________________________
 #### Inputs
 
 ```text
-deadline return book /by 2/12/2019 1800
-deadline pay fees /by 2019-10-15
-event orientation /from 2019-12-01 0900 /to 2019-12-03 1700
+deadline return book /by 2/12/2096 1800
+deadline pay fees /by 2096-10-15
+event orientation /from 2096-12-01 0900 /to 2096-12-03 1700
 list
 bye
 ```
@@ -671,24 +678,24 @@ How can I cheer you up today?
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Dec 02 2019 6:00PM)
+   [D][ ] return book (by: Dec 02 2096 6:00PM)
  Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] pay fees (by: Oct 15 2019 12:00AM)
+   [D][ ] pay fees (by: Oct 15 2096 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] orientation (from: Dec 01 2019 9:00AM to: Dec 03 2019 5:00PM)
+   [E][ ] orientation (from: Dec 01 2096 9:00AM to: Dec 03 2096 5:00PM)
  Now you have 3 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
- 1.[D][ ] return book (by: Dec 02 2019 6:00PM)
- 2.[D][ ] pay fees (by: Oct 15 2019 12:00AM)
- 3.[E][ ] orientation (from: Dec 01 2019 9:00AM to: Dec 03 2019 5:00PM)
+ 1.[D][ ] return book (by: Dec 02 2096 6:00PM)
+ 2.[D][ ] pay fees (by: Oct 15 2096 12:00AM)
+ 3.[E][ ] orientation (from: Dec 01 2096 9:00AM to: Dec 03 2096 5:00PM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -704,7 +711,7 @@ ____________________________________________________________
 ```text
 event trip /from 2019-08-08 /to 2019-08-06
 event trip /from 2019-08-06 /to 2019-08-06
-event trip /from 2019-08-06 0900 /to 2019-08-06 1700
+event trip /from 2096-08-06 0900 /to 2096-08-06 1700
 list
 bye
 ```
@@ -729,12 +736,12 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] trip (from: Aug 06 2019 9:00AM to: Aug 06 2019 5:00PM)
+   [E][ ] trip (from: Aug 06 2096 9:00AM to: Aug 06 2096 5:00PM)
  Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
- 1.[E][ ] trip (from: Aug 06 2019 9:00AM to: Aug 06 2019 5:00PM)
+ 1.[E][ ] trip (from: Aug 06 2096 9:00AM to: Aug 06 2096 5:00PM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -749,12 +756,12 @@ ____________________________________________________________
 
 ```text
 todo read book
-deadline return book /by 2019-12-02 1800
-event orientation /from 2019-12-01 /to 2019-12-03
-deadline pay fees /by 2019-12-02
-due 2019-12-02
-due 2/12/2019
-due 2019-12-05
+deadline return book /by 2096-12-02 1800
+event orientation /from 2096-12-01 /to 2096-12-03
+deadline pay fees /by 2096-12-02
+due 2096-12-02
+due 2/12/2096
+due 2096-12-05
 bye
 ```
 
@@ -777,31 +784,31 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Dec 02 2019 6:00PM)
+   [D][ ] return book (by: Dec 02 2096 6:00PM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+   [E][ ] orientation (from: Dec 01 2096 12:00AM to: Dec 03 2096 12:00AM)
  Now you have 3 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] pay fees (by: Dec 02 2019 12:00AM)
+   [D][ ] pay fees (by: Dec 02 2096 12:00AM)
  Now you have 4 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
- Here are the deadlines due on Dec 02 2019:
- 2.[D][ ] return book (by: Dec 02 2019 6:00PM)
- 4.[D][ ] pay fees (by: Dec 02 2019 12:00AM)
+ Here are the deadlines due on Dec 02 2096:
+ 2.[D][ ] return book (by: Dec 02 2096 6:00PM)
+ 4.[D][ ] pay fees (by: Dec 02 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
- Here are the deadlines due on Dec 02 2019:
- 2.[D][ ] return book (by: Dec 02 2019 6:00PM)
- 4.[D][ ] pay fees (by: Dec 02 2019 12:00AM)
+ Here are the deadlines due on Dec 02 2096:
+ 2.[D][ ] return book (by: Dec 02 2096 6:00PM)
+ 4.[D][ ] pay fees (by: Dec 02 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
- There are no deadlines due on Dec 05 2019.
+ There are no deadlines due on Dec 05 2096.
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -855,9 +862,9 @@ ____________________________________________________________
 #### Inputs
 
 ```text
-deadline return book /by 2019-12-02    1800
-deadline pay fees /by   2/12/2019 1800
-event orientation /from  2019-12-01   0900 /to 2019-12-03    1700
+deadline return book /by 2096-12-02    1800
+deadline pay fees /by   2/12/2096 1800
+event orientation /from  2096-12-01   0900 /to 2096-12-03    1700
 list
 bye
 ```
@@ -876,24 +883,24 @@ How can I cheer you up today?
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Dec 02 2019 6:00PM)
+   [D][ ] return book (by: Dec 02 2096 6:00PM)
  Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] pay fees (by: Dec 02 2019 6:00PM)
+   [D][ ] pay fees (by: Dec 02 2096 6:00PM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] orientation (from: Dec 01 2019 9:00AM to: Dec 03 2019 5:00PM)
+   [E][ ] orientation (from: Dec 01 2096 9:00AM to: Dec 03 2096 5:00PM)
  Now you have 3 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
- 1.[D][ ] return book (by: Dec 02 2019 6:00PM)
- 2.[D][ ] pay fees (by: Dec 02 2019 6:00PM)
- 3.[E][ ] orientation (from: Dec 01 2019 9:00AM to: Dec 03 2019 5:00PM)
+ 1.[D][ ] return book (by: Dec 02 2096 6:00PM)
+ 2.[D][ ] pay fees (by: Dec 02 2096 6:00PM)
+ 3.[E][ ] orientation (from: Dec 01 2096 9:00AM to: Dec 03 2096 5:00PM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -909,8 +916,8 @@ the stored and displayed description holds neither.
 
 ```text
 todo    read book
-deadline return book    /by 2019-12-02
-event   orientation    /from 2019-12-01 /to 2019-12-03
+deadline return book    /by 2096-12-02
+event   orientation    /from 2096-12-01 /to 2096-12-03
 list
 bye
 ```
@@ -934,19 +941,19 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Dec 02 2019 12:00AM)
+   [D][ ] return book (by: Dec 02 2096 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+   [E][ ] orientation (from: Dec 01 2096 12:00AM to: Dec 03 2096 12:00AM)
  Now you have 3 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
  1.[T][ ] read book
- 2.[D][ ] return book (by: Dec 02 2019 12:00AM)
- 3.[E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+ 2.[D][ ] return book (by: Dec 02 2096 12:00AM)
+ 3.[E][ ] orientation (from: Dec 01 2096 12:00AM to: Dec 03 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -966,7 +973,7 @@ deadline return book /by 2019-11-31
 deadline pay fees /by 2019-02-30
 deadline submit form /by 31/11/2019
 due 2019-02-29
-deadline leap task /by 2020-02-29
+deadline leap task /by 2096-02-29
 list
 bye
 ```
@@ -997,12 +1004,12 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] leap task (by: Feb 29 2020 12:00AM)
+   [D][ ] leap task (by: Feb 29 2096 12:00AM)
  Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
- 1.[D][ ] leap task (by: Feb 29 2020 12:00AM)
+ 1.[D][ ] leap task (by: Feb 29 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!
@@ -1019,8 +1026,8 @@ matches, and rejects a find command with no keyword.
 
 ```text
 todo read book
-deadline return book /by 2019-06-06
-event orientation /from 2019-12-01 /to 2019-12-03
+deadline return book /by 2096-06-06
+event orientation /from 2096-12-01 /to 2096-12-03
 mark 1
 mark 2
 find book
@@ -1050,12 +1057,12 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Jun 06 2019 12:00AM)
+   [D][ ] return book (by: Jun 06 2096 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+   [E][ ] orientation (from: Dec 01 2096 12:00AM to: Dec 03 2096 12:00AM)
  Now you have 3 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
@@ -1064,21 +1071,21 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Nice! I've marked this task as done:
-   [D][X] return book (by: Jun 06 2019 12:00AM)
+   [D][X] return book (by: Jun 06 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
  Here are the matching tasks in your list:
  1.[T][X] read book
- 2.[D][X] return book (by: Jun 06 2019 12:00AM)
+ 2.[D][X] return book (by: Jun 06 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
  Here are the matching tasks in your list:
  1.[T][X] read book
- 2.[D][X] return book (by: Jun 06 2019 12:00AM)
+ 2.[D][X] return book (by: Jun 06 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
  Here are the matching tasks in your list:
- 3.[E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+ 3.[E][ ] orientation (from: Dec 01 2096 12:00AM to: Dec 03 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
  There are no tasks matching "pizza".
@@ -1100,8 +1107,8 @@ uncompleted deadline when every deadline in the list is completed.
 
 ```text
 todo read book
-deadline return book /by 2019-12-02
-event orientation /from 2019-12-01 /to 2019-12-03
+deadline return book /by 2096-12-02
+event orientation /from 2096-12-01 /to 2096-12-03
 mark 1
 mark 2
 mark 3
@@ -1128,12 +1135,12 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [D][ ] return book (by: Dec 02 2019 12:00AM)
+   [D][ ] return book (by: Dec 02 2096 12:00AM)
  Now you have 2 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
  Got it. I've added this task:
-   [E][ ] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+   [E][ ] orientation (from: Dec 01 2096 12:00AM to: Dec 03 2096 12:00AM)
  Now you have 3 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
@@ -1142,11 +1149,11 @@ ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
  Nice! I've marked this task as done:
-   [D][X] return book (by: Dec 02 2019 12:00AM)
+   [D][X] return book (by: Dec 02 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
  Nice! I've marked this task as done:
-   [E][X] orientation (from: Dec 01 2019 12:00AM to: Dec 03 2019 12:00AM)
+   [E][X] orientation (from: Dec 01 2096 12:00AM to: Dec 03 2096 12:00AM)
 ____________________________________________________________
 ____________________________________________________________
  Here are your statistics for this week:
@@ -1249,6 +1256,46 @@ ____________________________________________________________
 ____________________________________________________________
  Here are the tasks in your list:
  1.[T][ ] read book
+____________________________________________________________
+____________________________________________________________
+Bye. Hope to see you again soon!
+____________________________________________________________
+```
+
+### TC-26: Reject expired deadline and event tasks
+
+**Aim:** Confirm that HappyBot rejects a deadline that is already due and an event that has
+already ended, without adding either task to the list.
+
+#### Inputs
+
+```text
+deadline old task /by 2000-01-01
+event old meeting /from 2000-01-01 /to 2000-01-02
+list
+bye
+```
+
+#### Expected output
+
+```text
+____________________________________________________________
+H   H   AAA   PPPP   PPPP   Y     Y BBBB    OOO   TTTTT
+H   H  A   A  P   P  P   P   Y   Y  B   B  O   O    T
+HHHHH  AAAAA  PPPP   PPPP     Y Y   BBBB   O   O    T
+H   H  A   A  P      P         Y    B   B  O   O    T
+H   H  A   A  P      P         Y    BBBB    OOO     T
+Hello! I'm HappyBot.
+How can I cheer you up today?
+____________________________________________________________
+____________________________________________________________
+ Oops! A deadline cannot be due in the past.
+____________________________________________________________
+____________________________________________________________
+ Oops! An event cannot end in the past.
+____________________________________________________________
+____________________________________________________________
+ Here are the tasks in your list:
 ____________________________________________________________
 ____________________________________________________________
 Bye. Hope to see you again soon!

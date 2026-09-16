@@ -88,6 +88,81 @@ public class Parser {
                     + "defaults to 0000, such as 2019-12-02 1800.";
 
     /**
+     * Holds the parts of a parsed deadline command.
+     *
+     * <p>The due date keeps whether the user wrote a time, because a date-only deadline and a
+     * deadline explicitly due at midnight have different expiry rules.
+     */
+    static final class DeadlineDetails {
+        private final String description;
+        private final ParsedDateTime dueDateTime;
+
+        DeadlineDetails(String description, ParsedDateTime dueDateTime) {
+            this.description = description;
+            this.dueDateTime = dueDateTime;
+        }
+
+        String getDescription() {
+            return description;
+        }
+
+        ParsedDateTime getDueDateTime() {
+            return dueDateTime;
+        }
+    }
+
+    /**
+     * Holds the parts of a parsed event command.
+     *
+     * <p>The start and end retain whether each supplied date included a time, so HappyBot can
+     * apply its current-time rule without mistaking a date-only input for midnight.
+     */
+    static final class EventDetails {
+        private final String description;
+        private final ParsedDateTime startTime;
+        private final ParsedDateTime endTime;
+
+        EventDetails(String description, ParsedDateTime startTime, ParsedDateTime endTime) {
+            this.description = description;
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+
+        String getDescription() {
+            return description;
+        }
+
+        ParsedDateTime getStartTime() {
+            return startTime;
+        }
+
+        ParsedDateTime getEndTime() {
+            return endTime;
+        }
+    }
+
+    /**
+     * Holds a parsed date and time together with whether the user entered the time.
+     */
+    static final class ParsedDateTime {
+        private final LocalDateTime dateTime;
+        private final boolean hasTime;
+
+        ParsedDateTime(LocalDateTime dateTime, boolean hasTime) {
+            this.dateTime = dateTime;
+            this.hasTime = hasTime;
+        }
+
+        LocalDateTime getDateTime() {
+            return dateTime;
+        }
+
+        boolean hasTime() {
+            return hasTime;
+        }
+    }
+
+    /**
      * Verifies that a command contains at least one non-whitespace character.
      *
      * <p>Commands intentionally accept accidental leading, trailing and repeated whitespace.
@@ -191,13 +266,13 @@ public class Parser {
     }
 
     /**
-     * Returns the deadline described by a deadline command.
+     * Returns the details described by a deadline command.
      *
      * @param body The command text after the command word.
-     * @return The deadline the command describes.
+     * @return The deadline description and due date details.
      * @throws HappyBotException If a part of the command is unusable, missing or unreadable.
      */
-    public static Deadline parseDeadline(String body) throws HappyBotException {
+    static DeadlineDetails parseDeadlineDetails(String body) throws HappyBotException {
         String normalizedBody = normalizeWhitespace(body);
         checkTaskText(normalizedBody);
 
@@ -212,18 +287,32 @@ public class Parser {
             throw new HappyBotException(DEADLINE_USAGE);
         }
 
-        return new Deadline(description, parseDateTime(dueDateText));
+        return new DeadlineDetails(description, parseDateTime(dueDateText));
     }
 
     /**
-     * Returns the event described by an event command.
+     * Returns the deadline described by a deadline command.
+     *
+     * <p>HappyBot uses {@link #parseDeadlineDetails(String)} when it needs to know whether a
+     * time was typed. This method remains for callers that only need the resulting task.
      *
      * @param body The command text after the command word.
-     * @return The event the command describes.
-     * @throws HappyBotException If a part of the command is unusable, missing or unreadable, or
-     *         if the event does not start before it ends.
+     * @return The deadline the command describes.
+     * @throws HappyBotException If a part of the command is unusable, missing or unreadable.
      */
-    public static Event parseEvent(String body) throws HappyBotException {
+    public static Deadline parseDeadline(String body) throws HappyBotException {
+        DeadlineDetails deadlineDetails = parseDeadlineDetails(body);
+        return new Deadline(deadlineDetails.getDescription(), deadlineDetails.getDueDateTime().getDateTime());
+    }
+
+    /**
+     * Returns the details described by an event command.
+     *
+     * @param body The command text after the command word.
+     * @return The event description, start details and end details.
+     * @throws HappyBotException If a part of the command is unusable, missing or unreadable.
+     */
+    static EventDetails parseEventDetails(String body) throws HappyBotException {
         String normalizedBody = normalizeWhitespace(body);
         checkTaskText(normalizedBody);
 
@@ -245,13 +334,28 @@ public class Parser {
             throw new HappyBotException(EVENT_USAGE);
         }
 
-        LocalDateTime startTime = parseDateTime(startText);
-        LocalDateTime endTime = parseDateTime(endText);
-        if (!startTime.isBefore(endTime)) {
-            throw new HappyBotException("An event must start before it ends.");
-        }
+        return new EventDetails(description, parseDateTime(startText), parseDateTime(endText));
+    }
 
-        return new Event(startTime, endTime, description);
+    /**
+     * Returns the event described by an event command.
+     *
+     * <p>HappyBot uses {@link #parseEventDetails(String)} when it needs to know whether the end
+     * time was typed. Event remains responsible for deciding whether the start is before the end.
+     *
+     * @param body The command text after the command word.
+     * @return The event the command describes.
+     * @throws HappyBotException If a part of the command is unusable, missing or unreadable, or
+     *         if the event does not start before it ends.
+     */
+    public static Event parseEvent(String body) throws HappyBotException {
+        EventDetails eventDetails = parseEventDetails(body);
+        try {
+            return new Event(eventDetails.getStartTime().getDateTime(),
+                    eventDetails.getEndTime().getDateTime(), eventDetails.getDescription());
+        } catch (IllegalArgumentException e) {
+            throw new HappyBotException(e.getMessage());
+        }
     }
 
     /**
@@ -270,7 +374,7 @@ public class Parser {
             throw new HappyBotException(DUE_USAGE);
         }
 
-        return parseDateTime(normalizedBody).toLocalDate();
+        return parseDateTime(normalizedBody).getDateTime().toLocalDate();
     }
 
     /**
@@ -309,7 +413,7 @@ public class Parser {
      * @return The date and time the text describes.
      * @throws HappyBotException If the date, or the time given after it, cannot be read.
      */
-    private static LocalDateTime parseDateTime(String dateTimeText) throws HappyBotException {
+    private static ParsedDateTime parseDateTime(String dateTimeText) throws HappyBotException {
         String[] dateTimeParts = normalizeWhitespace(dateTimeText).split(" ", 2);
 
         // The date and the time are read separately so that each failure earns its own message.
@@ -322,11 +426,12 @@ public class Parser {
         }
 
         if (dateTimeParts.length == 1) {
-            return LocalDateTime.of(date, LocalTime.MIDNIGHT);
+            return new ParsedDateTime(LocalDateTime.of(date, LocalTime.MIDNIGHT), false);
         }
 
         try {
-            return LocalDateTime.of(date, LocalTime.parse(dateTimeParts[1], TIME_FORMAT));
+            LocalDateTime dateTime = LocalDateTime.of(date, LocalTime.parse(dateTimeParts[1], TIME_FORMAT));
+            return new ParsedDateTime(dateTime, true);
         } catch (DateTimeParseException e) {
             throw new HappyBotException(DATE_FORMAT_HINT);
         }

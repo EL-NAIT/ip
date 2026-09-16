@@ -96,6 +96,74 @@ public class HappyBotTest {
     }
 
     @Test
+    public void getResponse_dateOnlyDeadline_pastDateRejectedAndTodayAccepted(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"), FIXED_CLOCK);
+
+        try {
+            assertEquals(" Oops! A deadline cannot be due in the past.",
+                    happyBot.getResponse("deadline old task /by 2026-09-15"));
+            assertTrue(happyBot.getResponse("deadline today task /by 2026-09-16")
+                    .contains("[D][ ] today task"));
+            assertFalse(happyBot.getResponse("list").contains("old task"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getResponse_timedDeadline_pastAndCurrentTimesRejectedAndFutureTimeAccepted(
+            @TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"), FIXED_CLOCK);
+
+        try {
+            assertEquals(" Oops! A deadline cannot be due in the past.",
+                    happyBot.getResponse("deadline midnight task /by 2026-09-16 0000"));
+            assertEquals(" Oops! A deadline cannot be due in the past.",
+                    happyBot.getResponse("deadline old task /by 2026-09-16 0800"));
+            assertEquals(" Oops! A deadline cannot be due in the past.",
+                    happyBot.getResponse("deadline now task /by 2026-09-16 0900"));
+            assertTrue(happyBot.getResponse("deadline later task /by 2026-09-16 0901")
+                    .contains("[D][ ] later task"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getResponse_dateOnlyEvent_pastEndRejectedAndTodayEndAccepted(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"), FIXED_CLOCK);
+
+        try {
+            assertEquals(" Oops! An event cannot end in the past.",
+                    happyBot.getResponse("event old meeting /from 2026-09-14 /to 2026-09-15"));
+            assertTrue(happyBot.getResponse("event today meeting /from 2026-09-15 /to 2026-09-16")
+                    .contains("[E][ ] today meeting"));
+            assertFalse(happyBot.getResponse("list").contains("old meeting"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
+    public void getResponse_timedEvent_pastAndCurrentEndsRejectedAndFutureEndAccepted(
+            @TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"), FIXED_CLOCK);
+
+        try {
+            assertEquals(" Oops! An event cannot end in the past.",
+                    happyBot.getResponse("event midnight meeting /from 2026-09-15 /to 2026-09-16 0000"));
+            assertEquals(" Oops! An event cannot end in the past.",
+                    happyBot.getResponse("event old meeting /from 2026-09-16 0700 /to 2026-09-16 0800"));
+            assertEquals(" Oops! An event cannot end in the past.",
+                    happyBot.getResponse("event now meeting /from 2026-09-16 0800 /to 2026-09-16 0900"));
+            assertTrue(happyBot.getResponse("event later meeting /from 2026-09-16 0800 /to 2026-09-16 1000")
+                    .contains("[E][ ] later meeting"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
     public void getResponse_byeCommand_goodbyeReturned(@TempDir Path tempDir) {
         HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
 
@@ -202,7 +270,7 @@ public class HappyBotTest {
 
     @Test
     public void getResponse_dueAndFindCommands_matchingTasksReturned(@TempDir Path tempDir) {
-        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"), FIXED_CLOCK);
 
         try {
             happyBot.getResponse("todo read book");

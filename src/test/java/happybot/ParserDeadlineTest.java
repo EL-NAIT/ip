@@ -3,6 +3,7 @@ package happybot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
 
@@ -44,6 +45,19 @@ public class ParserDeadlineTest {
         Deadline deadline = Parser.parseDeadline("return book /by 2019-12-02 1800");
 
         assertEquals(LocalDateTime.of(2019, 12, 2, 18, 0), deadline.getDueDateTime());
+    }
+
+    @Test
+    public void parseDeadlineDetails_dateOnlyAndExplicitMidnight_timePresenceKept()
+            throws HappyBotException {
+        Parser.DeadlineDetails dateOnly = Parser.parseDeadlineDetails("return book /by 2019-12-02");
+        Parser.DeadlineDetails explicitMidnight =
+                Parser.parseDeadlineDetails("return book /by 2019-12-02 0000");
+
+        assertFalse(dateOnly.getDueDateTime().hasTime());
+        assertTrue(explicitMidnight.getDueDateTime().hasTime());
+        assertEquals(dateOnly.getDueDateTime().getDateTime(),
+                explicitMidnight.getDueDateTime().getDateTime());
     }
 
     @Test
