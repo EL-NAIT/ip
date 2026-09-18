@@ -400,6 +400,19 @@ public class HappyBotTest {
     }
 
     @Test
+    public void getResponse_byeCommands_farewellOrUsageErrorReturned(@TempDir Path tempDir) {
+        HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
+
+        try {
+            assertEquals("Bye. Hope to see you again soon!", happyBot.getResponse("bye"));
+            assertEquals("Bye. Hope to see you again soon!", happyBot.getResponse(" \tbye  "));
+            assertEquals(" Oops! Use: bye.", happyBot.getResponse("bye now"));
+        } finally {
+            happyBot.close();
+        }
+    }
+
+    @Test
     public void isExitCommand_validAndInvalidInputs_correctlyIdentified(@TempDir Path tempDir) {
         HappyBot happyBot = new HappyBot(tempDir.resolve("tasks.txt"));
 

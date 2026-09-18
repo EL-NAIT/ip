@@ -66,6 +66,20 @@ depends on the clock when HappyBot runs:
 - an explicitly timed deadline or event end earlier today is rejected; and
 - an explicitly timed deadline or event end later today is accepted.
 
+### Graphical farewell checks that stay manual
+
+The console runner cannot check JavaFX rendering or window timing. Launch the graphical app
+and check these cases, restarting it after each valid exit:
+
+- enter `bye` using Enter, then repeat using Send: the chat shows
+  `Bye. Hope to see you again soon!` for approximately three seconds before the window closes;
+- confirm that the input field and Send button are disabled during the farewell pause;
+- enter `  bye  ` and confirm that it follows the same farewell sequence;
+- enter `bye now` and confirm that `Oops! Use: bye.` appears, the window remains open, and
+  commands can still be entered; and
+- after enough commands to fill the chat, enter `bye` and confirm that the farewell scrolls
+  into view before the window closes.
+
 ## Test cases
 
 ### TC-01: Exit the program

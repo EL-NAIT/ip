@@ -1,16 +1,21 @@
 package happybot;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 /**
  * Controls the main HappyBot window.
  */
 public class MainWindow extends AnchorPane {
+    private static final Duration EXIT_DELAY = Duration.seconds(3);
+
     @FXML
     private ScrollPane scrollPane;
 
@@ -19,6 +24,9 @@ public class MainWindow extends AnchorPane {
 
     @FXML
     private TextField userInput;
+
+    @FXML
+    private Button sendButton;
 
     private HappyBot happyBot;
 
@@ -43,7 +51,7 @@ public class MainWindow extends AnchorPane {
     }
 
     /**
-     * Displays the user's command and HappyBot's response, or exits for a bye command.
+     * Displays the user's command and response, allowing time to read the farewell before exiting.
      */
     @FXML
     private void handleUserInput() {
@@ -58,7 +66,12 @@ public class MainWindow extends AnchorPane {
         userInput.clear();
 
         if (happyBot.isExitCommand(input)) {
-            Platform.exit();
+            userInput.setDisable(true);
+            sendButton.setDisable(true);
+            // Keep the JavaFX thread free to display the farewell while waiting to close.
+            PauseTransition exitPause = new PauseTransition(EXIT_DELAY);
+            exitPause.setOnFinished(event -> Platform.exit());
+            exitPause.play();
         }
     }
 }

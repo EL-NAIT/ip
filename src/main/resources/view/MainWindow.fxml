@@ -21,6 +21,6 @@
                promptText="Type a command..." styleClass="command-input"
                AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="12.0"
                AnchorPane.rightAnchor="92.0" />
-    <Button defaultButton="true" onAction="#handleUserInput" text="Send"
+    <Button fx:id="sendButton" defaultButton="true" onAction="#handleUserInput" text="Send"
             AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="12.0" />
 </AnchorPane>
